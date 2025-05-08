@@ -1,5 +1,6 @@
 """Personen aus CSV lesen und in der Datenbank anlegen"""
 
+import argparse
 import csv
 import os
 import sys
@@ -283,6 +284,11 @@ if __name__ == "__main__":
     CSV_PERSONEN = "mitglieder.csv"
     AUSGABE_ORDNER = "qr-codes/"
 
+    parser = argparse.ArgumentParser(description="Erzeuge QR-Codes entsprechend der Liste in der csv-Datei.")
+    parser.add_argument("--force-creation", action="store_true", help="Erzwingt die Erstellung der QR-Codes auch wenn die Person bereits in der Datenbank angelegt wurde.")
+
+    args = parser.parse_args()
+
     try:
         # Erstelle den Ausgabeordner, falls er nicht existiert
         healthcheck()
@@ -298,7 +304,7 @@ if __name__ == "__main__":
                     if len(code) == 10 and code.isdigit():
                         # Prüfe, ob die Person bereits angelegt wurde
 
-                        if not person_existent(code):
+                        if not person_existent(code) or args.force_creation:
                             # Speichere Person in Datenbank
                             person_einfuegen(code, person)
                             # Aktion a - Addiere 1 Credit
