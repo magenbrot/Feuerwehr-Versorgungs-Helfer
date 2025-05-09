@@ -130,6 +130,7 @@ def healthcheck():
     get_response = get_request(get_url, get_headers)
     if get_response:
         return get_response.json()
+    return None
 
 
 def person_einfuegen(person_code, person_name):
@@ -182,7 +183,7 @@ def person_existent(person_code):
     if None in person_daten:
         print("Fehler beim Abrufen der Personendaten.")
         return None  # Oder eine andere Fehlerbehandlung, z.B. eine Exception werfen
-    elif not 'error' in person_daten:
+    if not 'error' in person_daten:
         return True
     return False
 

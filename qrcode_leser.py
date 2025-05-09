@@ -191,7 +191,7 @@ def qr_code_lesen(cap_video):
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
             continue  # Überspringe die QR-Code-Erkennung während der Wartezeit
-        elif wartezeit_aktiv:
+        if wartezeit_aktiv:
             wartezeit_aktiv = False
             letzter_inhalt = None  # Zurücksetzen, um neue Erkennung zu ermöglichen
 
@@ -310,7 +310,7 @@ def healthcheck():
     get_response = get_request(get_url, get_headers)
     if get_response:
         return get_response.json()
-
+    return None
 
 def daten_lesen_alle():
     """
@@ -328,6 +328,7 @@ def daten_lesen_alle():
     get_response = get_request(get_url, get_headers)
     if get_response:
         return get_response.json()
+    return None
 
 
 def kontostand_reset_alle():
@@ -347,6 +348,7 @@ def kontostand_reset_alle():
     delete_response = delete_request(delete_url, delete_headers)
     if delete_response:
         return delete_response.json()
+    return None
 
 
 def person_daten_lesen(code):
@@ -398,6 +400,7 @@ def person_loeschen(code):
     delete_response = delete_request(delete_url, delete_headers)
     if delete_response:
         return delete_response
+    return None
 
 
 def person_transaktion_erstellen(code, artikel, credits_change):
@@ -426,6 +429,7 @@ def person_transaktion_erstellen(code, artikel, credits_change):
     put_response = put_request(put_url, put_headers, put_daten)
     if put_response:
         return put_response
+    return None
 
 
 def person_transaktionen_loeschen(code):
@@ -447,6 +451,7 @@ def person_transaktionen_loeschen(code):
     delete_response = delete_request(delete_url, delete_headers)
     if delete_response:
         return delete_response
+    return None
 
 
 def system_beep_ascii():
