@@ -21,9 +21,6 @@ from PIL import Image, ImageDraw, ImageFont
 # Alle Benutzerkontostände ausgeben: 39b3bca191be67164317227fec3bed
 # Alle Kontostände auf 0 setzen: 6f75c49f98c66696babf1e1e0fe91a2
 
-# debugging
-# import pdb; pdb.set_trace()
-
 load_dotenv()
 api_url=os.environ.get("API_URL")
 api_key=os.environ.get("API_KEY")
