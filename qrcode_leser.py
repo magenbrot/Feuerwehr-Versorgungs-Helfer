@@ -6,9 +6,9 @@ import json
 import os
 from dotenv import load_dotenv
 import cv2
-import requests
 # import numpy as np # nur für optionale Visualisierung
 from pyzbar.pyzbar import decode
+import handle_requests as hr
 
 # Format der QR-Codes
 # Der Benutzercode hat 11 Stellen.
@@ -28,88 +28,6 @@ from pyzbar.pyzbar import decode
 load_dotenv()
 api_url=os.environ.get("API_URL")
 api_key=os.environ.get("API_KEY")
-
-def delete_request(url, headers=None):
-    """
-    Führt einen DELETE-Request an die angegebene URL aus.
-
-    Args:
-        url (str): Die URL, an die der Request gesendet werden soll.
-        headers (dict, optional): Ein Dictionary mit zu sendenden Request-Headern.
-
-    Returns:
-        requests.Response: Das Response-Objekt.
-    """
-    try:
-        response = requests.delete(url, headers=headers, timeout=5)
-        response.raise_for_status()
-        return response
-    except requests.exceptions.RequestException as e:
-        print(f"Fehler beim DELETE-Request: {e}.")
-        return response
-
-
-def get_request(url, headers=None, params=None):
-    """Führt einen GET-Request an die angegebene URL aus.
-
-    Args:
-        url (str): Die URL, an die der Request gesendet werden soll.
-        headers (dict, optional): Ein Dictionary mit zu sendenden Request-Headern.
-        params (dict, optional): Ein Dictionary mit Query-Parametern. Defaults to None.
-
-    Returns:
-        requests.Response: Das Response-Objekt.
-    """
-    try:
-        response = requests.get(url, headers=headers, params=params, timeout=5)
-        response.raise_for_status() # Wirft eine Exception für fehlerhafte Statuscodes
-        return response
-    except requests.exceptions.RequestException as e:
-        print(f"Fehler beim GET-Request: {e}.")
-        return response
-
-
-def post_request(url, headers=None, json_data=None):
-    """Führt einen POST-Request an die angegebene URL aus.
-
-    Args:
-        url (str): Die URL, an die der Request gesendet werden soll.
-        headers (dict, optional): Ein Dictionary mit zu sendenden Request-Headern.
-        json_data (dict, optional): Ein Dictionary, das als JSON-Daten gesendet wird. Defaults to None.
-
-    Returns:
-        requests.Response: Das Response-Objekt.
-    """
-    try:
-        response = requests.post(url, headers=headers,
-                                 json=json_data, timeout=5)
-        response.raise_for_status()
-        return response
-    except requests.exceptions.RequestException as e:
-        print(f"Fehler beim POST-Request: {e}.")
-        return response
-
-
-def put_request(url, headers=None, json_data=None):
-    """
-    Führt einen PUT-Request an die angegebene URL aus.
-
-    Args:
-        url (str): Die URL, an die der Request gesendet werden soll.
-        headers (dict, optional): Ein Dictionary mit zu sendenden Request-Headern.
-        json_data (dict, optional): Ein Dictionary, das als JSON-Daten gesendet wird. Defaults to None.
-
-    Returns:
-        requests.Response: Das Response-Objekt.
-    """
-    try:
-        response = requests.put(url, headers=headers,
-                                json=json_data, timeout=5)
-        response.raise_for_status()
-        return response
-    except requests.exceptions.RequestException as e:
-        print(f"Fehler beim PUT-Request: {e}.")
-        return response
 
 
 def json_daten_ausgeben(daten):
@@ -307,7 +225,7 @@ def healthcheck():
         'X-API-Key': api_key
     }
 
-    get_response = get_request(get_url, get_headers)
+    get_response = hr.get_request(get_url, get_headers)
     if get_response:
         return get_response.json()
     return None
@@ -325,7 +243,7 @@ def daten_lesen_alle():
         'X-API-Key': api_key
     }
 
-    get_response = get_request(get_url, get_headers)
+    get_response = hr.get_request(get_url, get_headers)
     if get_response:
         return get_response.json()
     return None
@@ -345,7 +263,7 @@ def kontostand_reset_alle():
         'X-API-Key': api_key
     }
 
-    delete_response = delete_request(delete_url, delete_headers)
+    delete_response = hr.delete_request(delete_url, delete_headers)
     if delete_response:
         return delete_response.json()
     return None
@@ -368,7 +286,7 @@ def person_daten_lesen(code):
         'X-API-Key': api_key
     }
 
-    get_response = get_request(get_url, get_headers)
+    get_response = hr.get_request(get_url, get_headers)
 
     person_daten = get_response.json()
     if 'error' in person_daten:
@@ -376,8 +294,7 @@ def person_daten_lesen(code):
         return None  # Oder eine andere Fehlerbehandlung, z.B. eine Exception werfen
     if person_daten:
         return (person_daten['name'], person_daten['summe_credits'])
-    else:
-        return None # Fallback, falls die Antwort leer ist (was unwahrscheinlich ist, wenn kein Fehler vorliegt)
+    return None # Fallback, falls die Antwort leer ist (was unwahrscheinlich ist, wenn kein Fehler vorliegt)
 
 
 def person_loeschen(code):
@@ -397,7 +314,7 @@ def person_loeschen(code):
         'X-API-Key': api_key
     }
 
-    delete_response = delete_request(delete_url, delete_headers)
+    delete_response = hr.delete_request(delete_url, delete_headers)
     if delete_response:
         return delete_response
     return None
@@ -426,7 +343,7 @@ def person_transaktion_erstellen(code, artikel, credits_change):
         'credits': credits_change
     }
 
-    put_response = put_request(put_url, put_headers, put_daten)
+    put_response = hr.put_request(put_url, put_headers, put_daten)
     if put_response:
         return put_response
     return None
@@ -448,7 +365,7 @@ def person_transaktionen_loeschen(code):
         'X-API-Key': api_key
     }
 
-    delete_response = delete_request(delete_url, delete_headers)
+    delete_response = hr.delete_request(delete_url, delete_headers)
     if delete_response:
         return delete_response
     return None

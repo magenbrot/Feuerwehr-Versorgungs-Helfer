@@ -6,8 +6,8 @@ import os
 import sys
 from dotenv import load_dotenv
 import qrcode
-import requests
 from PIL import Image, ImageDraw, ImageFont
+import handle_requests as hr
 
 # Format der QR-Codes
 # Der Benutzercode hat 11 Stellen.
@@ -24,89 +24,6 @@ from PIL import Image, ImageDraw, ImageFont
 load_dotenv()
 api_url=os.environ.get("API_URL")
 api_key=os.environ.get("API_KEY")
-
-def delete_request(url, headers=None):
-    """
-    Führt einen DELETE-Request an die angegebene URL aus.
-
-    Args:
-        url (str): Die URL, an die der Request gesendet werden soll.
-
-    Returns:
-        requests.Response: Das Response-Objekt.
-    """
-    try:
-        response = requests.delete(url, headers=headers, timeout=5)
-        response.raise_for_status()
-        # print("DELETE-Request erfolgreich!")
-        return response
-    except requests.exceptions.RequestException as e:
-        print(f"Fehler beim DELETE-Request: {e}.")
-        return None
-
-
-def get_request(url, headers=None, params=None):
-    """Führt einen GET-Request an die angegebene URL aus.
-
-    Args:
-        url (str): Die URL, an die der Request gesendet werden soll.
-        headers (dict, optional): Ein Dictionary mit zu sendenden Request-Headern.
-        params (dict, optional): Ein Dictionary mit Query-Parametern. Defaults to None.
-
-    Returns:
-        requests.Response: Das Response-Objekt.
-    """
-    try:
-        response = requests.get(url, headers=headers, params=params, timeout=5)
-        response.raise_for_status()  # Wirft eine Exception für fehlerhafte Statuscodes
-        # print("GET-Request erfolgreich!")
-        return response
-    except requests.exceptions.RequestException as e:
-        print(f"Fehler beim GET-Request: {e}.")
-        sys.exit(0)
-
-
-def post_request(url, headers=None, json=None):
-    """Führt einen POST-Request an die angegebene URL aus.
-
-    Args:
-        url (str): Die URL, an die der Request gesendet werden soll.
-        headers (dict, optional): Ein Dictionary mit zu sendenden Request-Headern.
-        json (dict, optional): Ein Dictionary, das als JSON-Daten gesendet wird. Defaults to None.
-
-    Returns:
-        requests.Response: Das Response-Objekt.
-    """
-    try:
-        response = requests.post(url, headers=headers, json=json, timeout=5)
-        response.raise_for_status()
-        # print("POST-Request erfolgreich!")
-        return response
-    except requests.exceptions.RequestException as e:
-        print(f"Fehler beim POST-Request: {e}.")
-        sys.exit(0)
-
-
-def put_request(url, headers=None, json=None):
-    """
-    Führt einen PUT-Request an die angegebene URL aus.
-
-    Args:
-        url (str): Die URL, an die der Request gesendet werden soll.
-        headers (dict, optional): Ein Dictionary mit zu sendenden Request-Headern.
-        json (dict, optional): Ein Dictionary, das als JSON-Daten gesendet wird. Defaults to None.
-
-    Returns:
-        requests.Response: Das Response-Objekt.
-    """
-    try:
-        response = requests.put(url, headers=headers, json=json, timeout=5)
-        response.raise_for_status()
-        # print("PUT-Request erfolgreich!")
-        return response
-    except requests.exceptions.RequestException as e:
-        print(f"Fehler beim PUT-Request: {e}.")
-        return None
 
 
 def healthcheck():
@@ -127,7 +44,7 @@ def healthcheck():
         'X-API-Key': api_key
     }
 
-    get_response = get_request(get_url, get_headers)
+    get_response = hr.get_request(get_url, get_headers)
     if get_response:
         return get_response.json()
     return None
@@ -152,7 +69,7 @@ def person_einfuegen(person_code, person_name):
         'name': person_name
     }
 
-    post_response = post_request(post_url, post_headers, json=post_daten)
+    post_response = hr.post_request(post_url, post_headers, post_daten)
     if post_response:
         # print("POST Response Body:")
         # print(post_response.json())
@@ -177,7 +94,7 @@ def person_existent(person_code):
         'X-API-Key': api_key
     }
 
-    get_response = get_request(get_url, get_headers)
+    get_response = hr.get_request(get_url, get_headers)
 
     person_daten = get_response.json()
     if None in person_daten:
