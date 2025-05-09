@@ -374,7 +374,7 @@ def person_daten_lesen(code):
     if 'error' in person_daten:
         print(f"Fehler beim Abrufen der Personendaten: {person_daten['error']}.")
         return None  # Oder eine andere Fehlerbehandlung, z.B. eine Exception werfen
-    elif person_daten:
+    if person_daten:
         return (person_daten['name'], person_daten['summe_credits'])
     else:
         return None # Fallback, falls die Antwort leer ist (was unwahrscheinlich ist, wenn kein Fehler vorliegt)
