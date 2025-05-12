@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import qrcode
 from PIL import Image, ImageDraw, ImageFont
 import handle_requests as hr
+from werkzeug.security import generate_password_hash
 
 # Format der QR-Codes
 # Der Benutzercode hat 11 Stellen.
@@ -24,6 +25,7 @@ import handle_requests as hr
 load_dotenv()
 api_url=os.environ.get("API_URL")
 api_key=os.environ.get("API_KEY")
+default_password=os.environ.get("DEFAULT_PASSWORD")
 
 
 def healthcheck():
@@ -67,6 +69,15 @@ def person_einfuegen(person_code, person_name):
     post_daten = {
         'code': person_code,
         'name': person_name
+    }
+
+    # Erzeuge den Hash des Standardpassworts
+    hashed_password = generate_password_hash(default_password)
+
+    post_daten = {
+        'code': person_code,
+        'name': person_name,
+        'password': hashed_password  # Füge das gehashte Passwort hinzu
     }
 
     post_response = hr.post_request(post_url, post_headers, post_daten)
