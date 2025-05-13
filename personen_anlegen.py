@@ -7,8 +7,8 @@ import sys
 from dotenv import load_dotenv
 import qrcode
 from PIL import Image, ImageDraw, ImageFont
-import handle_requests as hr
 from werkzeug.security import generate_password_hash
+import handle_requests as hr
 
 # Format der QR-Codes
 # Der Benutzercode hat 11 Stellen.
