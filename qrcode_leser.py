@@ -230,6 +230,7 @@ def healthcheck():
         return get_response.json()
     return None
 
+
 def daten_lesen_alle():
     """
     Daten aller Benutzer ausgeben.
@@ -403,7 +404,11 @@ if __name__ == "__main__":
         sys.exit(1)
 
     try:
-        healthcheck()
+        health_status = healthcheck()
+        if health_status is None:
+            print("Healthcheck fehlgeschlagen. Beende Skript.")
+            exit(1)
+
         cap = cv2.VideoCapture(0)
         if not cap.isOpened():
             raise IOError("Kamera konnte nicht geöffnet werden.")
