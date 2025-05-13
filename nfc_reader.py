@@ -8,6 +8,7 @@ Umgebungsvariablen (.env-Datei) geladen.
 import time
 import os
 import sys
+from smartcard.Exceptions import CardConnectionException, SmartcardException, NoReadersException
 from smartcard.System import readers
 from smartcard.util import toHexString
 from dotenv import load_dotenv
@@ -123,6 +124,16 @@ def lies_nfc_kontinuierlich(nfc_reader):
 
             connection.disconnect()
 
+        except CardConnectionException as e:
+            print(f"Fehler bei der Kartenverbindung: {e}")
+            letzte_bekannte_uid = None
+            verarbeitungs_status = {}
+            time.sleep(1)
+        except SmartcardException as e:
+            print(f"Smartcard-Fehler ist aufgetreten: {e}")
+            letzte_bekannte_uid = None
+            verarbeitungs_status = {}
+            time.sleep(1)
         except Exception as e:
             error_message = str(e)
             if "Card was reset" in error_message or "Card protocol mismatch" in error_message:
@@ -133,10 +144,10 @@ def lies_nfc_kontinuierlich(nfc_reader):
                 verarbeitungs_status = {}
                 time.sleep(1)
             else:
+                print(f"Ein unerwarteter Fehler ist aufgetreten: {e}")
                 letzte_bekannte_uid = None
                 verarbeitungs_status = {}
                 time.sleep(1)
-                print(f"Ein Fehler ist aufgetreten: {e}")
 
 
 if __name__ == "__main__":
@@ -175,5 +186,15 @@ if __name__ == "__main__":
 
     except ImportError:
         print("Das Modul 'pyscard' ist nicht installiert.")
+    except NoReadersException as e:
+        print(f"{e}")
+        exit(1)
+    except CardConnectionException as e:
+        print(f"Fehler bei der Kartenverbindung: {e}")
+        exit(1)
+    except SmartcardException as e:
+        print(f"Smartcard-Fehler ist aufgetreten: {e}")
+        exit(1)
     except Exception as e:
-        print(f"Ein Fehler ist aufgetreten: {e}")
+        print(f"Ein unerwarteter Fehler im Hauptteil des Skripts ist aufgetreten: {e}")
+        exit(1)
