@@ -18,8 +18,8 @@ import handle_requests as hr
 
 
 load_dotenv()
-api_url=os.environ.get("API_URL")
-api_key=os.environ.get("API_KEY")
+api_url = os.environ.get("API_URL")
+api_key = os.environ.get("API_KEY")
 
 
 def healthcheck():
@@ -82,6 +82,53 @@ def token_gefunden(uid_hex):
         return False
 
 
+def lese_karte(connection):
+    """
+    Liest die UID von der Karte.
+
+    Args:
+        connection: Die Kartenverbindung.
+
+    Returns:
+        str: Die UID als Hex-String, oder None im Fehlerfall.
+    """
+    try:
+        get_uid = [0xFF, 0xCA, 0x00, 0x00, 0x00]
+        response, sw1, sw2 = connection.transmit(get_uid)
+
+        if sw1 == 0x90 and sw2 == 0x00:
+            return toHexString(response)
+        return None
+    except Exception as e:
+        print(f"Fehler beim Lesen der Karte: {e}")
+        return None
+
+
+def verarbeite_uid(uid_hex, last_uid, aktuell_verarbeitete_uid):
+    """
+    Verarbeitet die gelesene UID.
+
+    Args:
+        uid_hex: Die gelesene UID.
+        last_uid: Die zuletzt verarbeitete UID.
+        aktuell_verarbeitete_uid: Die UID, die aktuell in Verarbeitung ist.
+
+    Returns:
+        tuple: (neue_last_uid, neue_aktuell_verarbeitete_uid)
+    """
+
+    if uid_hex not in (last_uid, aktuell_verarbeitete_uid):
+        api_erfolgreich = token_gefunden(uid_hex)
+        if not api_erfolgreich:
+            return uid_hex, uid_hex
+        return uid_hex, None
+    elif uid_hex == aktuell_verarbeitete_uid and uid_hex != last_uid:
+        return None, None  # Token entfernt/neu aufgelegt
+    elif uid_hex == last_uid:
+        time.sleep(0.1)
+    return last_uid, aktuell_verarbeitete_uid
+
+
 def lies_nfc_kontinuierlich(nfc_reader):
     """
     Startet eine kontinuierliche NFC-Leseschleife für den angegebenen Reader.
@@ -101,52 +148,34 @@ def lies_nfc_kontinuierlich(nfc_reader):
 
     try:
         while True:
+            connection = None  # Wichtig: connection außerhalb des try-Blocks definieren
             try:
                 connection = nfc_reader.createConnection()
                 connection.connect()
 
-                get_uid = [0xFF, 0xCA, 0x00, 0x00, 0x00]
-                response, sw1, sw2 = connection.transmit(get_uid)
-
-                if sw1 == 0x90 and sw2 == 0x00:
-                    uid_hex = toHexString(response)  # UID bleibt als Hex-String (mit Leerzeichen)
-                    if uid_hex not in (last_uid, aktuell_verarbeitete_uid):
-                        api_erfolgreich = token_gefunden(uid_hex)  # Übergabe als Hex-String
-                        if not api_erfolgreich:
-                            aktuell_verarbeitete_uid = uid_hex
-                        last_uid = uid_hex
-                    elif uid_hex == aktuell_verarbeitete_uid and uid_hex != last_uid:
-                        # Token wurde möglicherweise entfernt und wieder aufgelegt
-                        aktuell_verarbeitete_uid = None
-                        last_uid = None  # Zurücksetzen, um erneute Verarbeitung zu ermöglichen
-                    elif uid_hex == last_uid:
-                        time.sleep(0.1)  # Kurze Wartezeit, wenn UID gleich bleibt
+                uid_hex = lese_karte(connection)
+                if uid_hex:
+                    last_uid, aktuell_verarbeitete_uid = verarbeite_uid(uid_hex, last_uid, aktuell_verarbeitete_uid)
                 else:
-                    last_uid = None
-                    aktuell_verarbeitete_uid = None
-                    time.sleep(0.2)
-
-                connection.disconnect()
+                    time.sleep(0.2)  # Wartezeit, wenn keine UID gelesen wird
 
             except CardConnectionException as e:
+                # Behandele den Fall, dass keine Karte da ist oder ein anderer Verbindungsfehler auftritt
                 error_message = str(e)
-                if "Card was reset" in error_message or "Card protocol mismatch" in error_message or "Card is unpowered" in error_message:
-                    print(f"NFC-Kartenfehler erkannt: '{error_message}'. Ignoriere.")
-                    time.sleep(0.5)
-                elif "No smart card inserted" in error_message:
-                    last_uid = None
-                    aktuell_verarbeitete_uid = None
+                if "No smart card inserted" in error_message:
                     time.sleep(0.2)
                 else:
-                    last_uid = None
-                    aktuell_verarbeitete_uid = None
+                    print(f"Fehler bei der Kartenverbindung: {e}")
                     time.sleep(0.2)
-                    print(f"Ein Fehler ist aufgetreten: {e}")
-            except Exception:  # pylint: disable=W0718
-                last_uid = None
-                aktuell_verarbeitete_uid = None
+            except Exception as e:
+                print(f"Unerwarteter Fehler in der Leseschleife: {e}")
                 time.sleep(0.2)
-                #print(f"Ein unerwarteter Fehler in der Leseschleife ist aufgetreten: {e}")
+            finally:
+                if connection:  # Stelle sicher, dass die Verbindung geschlossen wird, wenn sie geöffnet wurde
+                    try:
+                        connection.disconnect()
+                    except Exception:
+                        pass  # Fehler beim Trennen sind nicht kritisch
 
     except KeyboardInterrupt:
         print("\nNFC-Reader wird beendet.")
