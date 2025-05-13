@@ -100,7 +100,7 @@ def lies_nfc_kontinuierlich(nfc_reader):
 
             if sw1 == 0x90 and sw2 == 0x00:
                 uid = toHexString(response)
-                if uid != last_uid and uid != aktuell_verarbeitete_uid:
+                if uid not in (last_uid, aktuell_verarbeitete_uid):
                     api_erfolgreich = token_gefunden(uid)
                     if not api_erfolgreich:
                         aktuell_verarbeitete_uid = uid
