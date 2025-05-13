@@ -70,9 +70,8 @@ def token_gefunden(uid):
         if response is not None and response.status_code == 404:
             print(f"Benutzer mit UID {uid} nicht gefunden (404).")
             return False  # API-Anfrage fehlgeschlagen, Benutzer nicht gefunden
-        else:
-            print(f"Fehler beim Senden der UID an die API: {e}")
-            return False  # Andere API-Fehler
+        print(f"Fehler beim Senden der UID an die API: {e}")
+        return False  # Andere API-Fehler
 
 
 def lies_nfc_kontinuierlich(nfc_reader):
@@ -162,12 +161,12 @@ if __name__ == "__main__":
         health_status = healthcheck()
         if health_status is None:
             print("Healthcheck fehlgeschlagen. Beende Skript.")
-            exit(1)
+            sys.exit(1)
 
         reader_list = readers()
         if not reader_list:
             print("Keine PC/SC-Reader gefunden.")
-            exit()
+            sys.exit()
 
         print("Verfügbare Reader:")
         for i, reader in enumerate(reader_list):
@@ -188,13 +187,13 @@ if __name__ == "__main__":
         print("Das Modul 'pyscard' ist nicht installiert.")
     except NoReadersException as e:
         print(f"{e}")
-        exit(1)
+        sys.exit(1)
     except CardConnectionException as e:
         print(f"Fehler bei der Kartenverbindung: {e}")
-        exit(1)
+        sys.exit(1)
     except SmartcardException as e:
         print(f"Smartcard-Fehler ist aufgetreten: {e}")
-        exit(1)
+        sys.exit(1)
     except Exception as e:
         print(f"Ein unerwarteter Fehler im Hauptteil des Skripts ist aufgetreten: {e}")
-        exit(1)
+        sys.exit(1)

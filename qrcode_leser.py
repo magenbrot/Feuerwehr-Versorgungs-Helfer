@@ -407,7 +407,7 @@ if __name__ == "__main__":
         health_status = healthcheck()
         if health_status is None:
             print("Healthcheck fehlgeschlagen. Beende Skript.")
-            exit(1)
+            sys.exit(1)
 
         cap = cv2.VideoCapture(0)
         if not cap.isOpened():
