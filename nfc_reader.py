@@ -5,6 +5,8 @@ Transaktion zu erstellen. Die API-URL und der API-Schlüssel werden aus
 Umgebungsvariablen (.env-Datei) geladen.
 """
 
+import base64
+import binascii
 import time
 import os
 import sys
@@ -39,39 +41,45 @@ def healthcheck():
     return None
 
 
-def token_gefunden(uid):
+def token_gefunden(uid_hex):
     """
-    Wird aufgerufen, wenn ein NFC-Token erkannt wurde. Sendet die UID an die API.
+    Wird aufgerufen, wenn ein NFC-Token erkannt wurde. Sendet die UID als Bytes an die API.
 
     Args:
-        uid (str): Die eindeutige ID (UID) des erkannten NFC-Tokens als Hex-String.
+        uid_hex (str): Die eindeutige ID (UID) des erkannten NFC-Tokens als Hex-String.
 
     Returns:
         bool: True, wenn die API-Anfrage erfolgreich war (Statuscode 2xx), False bei anderen Fehlern.
     """
-
-    print(f"NFC-Token mit UID {uid} erkannt! Sende an API...")
 
     put_url = f"{api_url}/nfc-transaction"
     put_headers = {
         'X-API-Key': api_key
     }
 
-    put_daten = {
-        'uid': uid,
-    }
-
     try:
+        # Entferne die Leerzeichen aus dem Hex-String
+        uid_hex_ohne_leerzeichen = uid_hex.replace(" ", "")
+        uid_bytes = binascii.unhexlify(uid_hex_ohne_leerzeichen)
+        uid_base64 = base64.b64encode(uid_bytes).decode('utf-8')
+        put_daten = {
+            'uid': uid_base64,
+        }
+
+        print(f"NFC-Token mit UID {uid_hex} ({uid_hex_ohne_leerzeichen}) erkannt! Sende an API...")
         response = hr.put_request(put_url, put_headers, put_daten)
         response.raise_for_status()
         print(f"API-Antwort: {response.json()}")
         return True
     except hr.requests.exceptions.RequestException as e:
         if response is not None and response.status_code == 404:
-            print(f"Benutzer mit UID {uid} nicht gefunden (404).")
+            print(f"Benutzer mit UID {uid_hex} nicht gefunden (404).")
             return False  # API-Anfrage fehlgeschlagen, Benutzer nicht gefunden
         print(f"Fehler beim Senden der UID an die API: {e}")
         return False  # Andere API-Fehler
+    except binascii.Error:
+        print(f"Fehler: Ungültiger Hexadezimalstring: {uid_hex}")
+        return False
 
 
 def lies_nfc_kontinuierlich(nfc_reader):
@@ -99,18 +107,18 @@ def lies_nfc_kontinuierlich(nfc_reader):
             response, sw1, sw2 = connection.transmit(get_uid)
 
             if sw1 == 0x90 and sw2 == 0x00:
-                uid = toHexString(response)
-                if uid not in (last_uid, aktuell_verarbeitete_uid):
-                    api_erfolgreich = token_gefunden(uid)
+                uid_hex = toHexString(response)  # UID bleibt als Hex-String
+                if uid_hex not in (last_uid, aktuell_verarbeitete_uid):
+                    api_erfolgreich = token_gefunden(uid_hex)  # Übergabe als Hex-String
                     if not api_erfolgreich:
-                        aktuell_verarbeitete_uid = uid
-                    last_uid = uid
-                elif uid == aktuell_verarbeitete_uid and uid != last_uid:
+                        aktuell_verarbeitete_uid = uid_hex
+                    last_uid = uid_hex
+                elif uid_hex == aktuell_verarbeitete_uid and uid_hex != last_uid:
                     # Token wurde möglicherweise entfernt und wieder aufgelegt
                     aktuell_verarbeitete_uid = None
-                    last_uid = None # Zurücksetzen, um erneute Verarbeitung zu ermöglichen
-                elif uid == last_uid:
-                    time.sleep(0.1) # Kurze Wartezeit, wenn UID gleich bleibt
+                    last_uid = None  # Zurücksetzen, um erneute Verarbeitung zu ermöglichen
+                elif uid_hex == last_uid:
+                    time.sleep(0.1)  # Kurze Wartezeit, wenn UID gleich bleibt
             else:
                 last_uid = None
                 aktuell_verarbeitete_uid = None
@@ -118,7 +126,7 @@ def lies_nfc_kontinuierlich(nfc_reader):
 
             connection.disconnect()
 
-        except Exception as e: # pylint: disable=W0718
+        except Exception as e:  # pylint: disable=W0718
             error_message = str(e)
             if "Card was reset" in error_message or "Card protocol mismatch" in error_message or "Card is unpowered" in error_message:
                 print(f"NFC-Kartenfehler erkannt: '{error_message}'. Ignoriere.")
