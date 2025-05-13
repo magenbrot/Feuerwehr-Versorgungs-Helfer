@@ -23,9 +23,9 @@ from werkzeug.security import generate_password_hash
 # Alle Kontostände auf 0 setzen: 6f75c49f98c66696babf1e1e0fe91a2
 
 load_dotenv()
-api_url=os.environ.get("API_URL")
-api_key=os.environ.get("API_KEY")
-default_password=os.environ.get("DEFAULT_PASSWORD")
+api_url = os.environ.get("API_URL")
+api_key = os.environ.get("API_KEY")
+default_password = os.environ.get("DEFAULT_PASSWORD")
 
 
 def healthcheck():
