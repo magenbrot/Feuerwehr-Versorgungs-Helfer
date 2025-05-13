@@ -99,7 +99,7 @@ def lese_karte(connection):
         if sw1 == 0x90 and sw2 == 0x00:
             return toHexString(response)
         return None
-    except Exception as e:
+    except Exception as e:  # pylint: disable=W0718
         print(f"Fehler beim Lesen der Karte: {e}")
         return None
 
@@ -122,9 +122,9 @@ def verarbeite_uid(uid_hex, last_uid, aktuell_verarbeitete_uid):
         if not api_erfolgreich:
             return uid_hex, uid_hex
         return uid_hex, None
-    elif uid_hex == aktuell_verarbeitete_uid and uid_hex != last_uid:
+    if uid_hex == aktuell_verarbeitete_uid and uid_hex != last_uid:
         return None, None  # Token entfernt/neu aufgelegt
-    elif uid_hex == last_uid:
+    if uid_hex == last_uid:
         time.sleep(0.1)
     return last_uid, aktuell_verarbeitete_uid
 
@@ -167,14 +167,14 @@ def lies_nfc_kontinuierlich(nfc_reader):
                 else:
                     print(f"Fehler bei der Kartenverbindung: {e}")
                     time.sleep(0.2)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=W0718
                 print(f"Unerwarteter Fehler in der Leseschleife: {e}")
                 time.sleep(0.2)
             finally:
                 if connection:  # Stelle sicher, dass die Verbindung geschlossen wird, wenn sie geöffnet wurde
                     try:
                         connection.disconnect()
-                    except Exception:
+                    except Exception:  # pylint: disable=W0718
                         pass  # Fehler beim Trennen sind nicht kritisch
 
     except KeyboardInterrupt:
