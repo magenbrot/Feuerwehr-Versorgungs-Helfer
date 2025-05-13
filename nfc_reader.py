@@ -129,8 +129,8 @@ def lies_nfc_kontinuierlich(nfc_reader):
             letzte_bekannte_uid = None
             verarbeitungs_status = {}
             time.sleep(1)
-        except SmartcardException as e:
-            print(f"Smartcard-Fehler ist aufgetreten: {e}")
+        except SmartcardException:
+            #print(f"Smartcard-Fehler ist aufgetreten: {e}")
             letzte_bekannte_uid = None
             verarbeitungs_status = {}
             time.sleep(1)
