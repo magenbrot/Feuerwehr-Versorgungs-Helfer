@@ -2,6 +2,7 @@
 
 opencv-python==4.11.0.86
 pillow==11.2.1
+pyscard==2.2.2
 python-dotenv==1.1.0
 pyzbar==0.1.9
 qrcode==8.2
