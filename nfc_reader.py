@@ -90,6 +90,7 @@ def lies_nfc_kontinuierlich(nfc_reader):
     Verhindert die mehrfache Verarbeitung derselben UID, bis das Token entfernt wird,
     insbesondere wenn die API mit einem 404 (Benutzer nicht gefunden) antwortet.
     Implementiert eine verlängerte Wartezeit nach erfolgreicher Verarbeitung.
+    Fängt KeyboardInterrupt (CTRL+C) ab, um das Programm sauber zu beenden.
 
     Args:
         nfc_reader (smartcard.pcsc.PCSCReader): Das Reader-Objekt, das für die NFC-Kommunikation verwendet wird.
@@ -98,48 +99,59 @@ def lies_nfc_kontinuierlich(nfc_reader):
     last_uid = None
     aktuell_verarbeitete_uid = None
 
-    while True:
-        try:
-            connection = nfc_reader.createConnection()
-            connection.connect()
+    try:
+        while True:
+            try:
+                connection = nfc_reader.createConnection()
+                connection.connect()
 
-            get_uid = [0xFF, 0xCA, 0x00, 0x00, 0x00]
-            response, sw1, sw2 = connection.transmit(get_uid)
+                get_uid = [0xFF, 0xCA, 0x00, 0x00, 0x00]
+                response, sw1, sw2 = connection.transmit(get_uid)
 
-            if sw1 == 0x90 and sw2 == 0x00:
-                uid_hex = toHexString(response)  # UID bleibt als Hex-String
-                if uid_hex not in (last_uid, aktuell_verarbeitete_uid):
-                    api_erfolgreich = token_gefunden(uid_hex)  # Übergabe als Hex-String
-                    if not api_erfolgreich:
-                        aktuell_verarbeitete_uid = uid_hex
-                    last_uid = uid_hex
-                elif uid_hex == aktuell_verarbeitete_uid and uid_hex != last_uid:
-                    # Token wurde möglicherweise entfernt und wieder aufgelegt
+                if sw1 == 0x90 and sw2 == 0x00:
+                    uid_hex = toHexString(response)  # UID bleibt als Hex-String (mit Leerzeichen)
+                    if uid_hex not in (last_uid, aktuell_verarbeitete_uid):
+                        api_erfolgreich = token_gefunden(uid_hex)  # Übergabe als Hex-String
+                        if not api_erfolgreich:
+                            aktuell_verarbeitete_uid = uid_hex
+                        last_uid = uid_hex
+                    elif uid_hex == aktuell_verarbeitete_uid and uid_hex != last_uid:
+                        # Token wurde möglicherweise entfernt und wieder aufgelegt
+                        aktuell_verarbeitete_uid = None
+                        last_uid = None  # Zurücksetzen, um erneute Verarbeitung zu ermöglichen
+                    elif uid_hex == last_uid:
+                        time.sleep(0.1)  # Kurze Wartezeit, wenn UID gleich bleibt
+                else:
+                    last_uid = None
                     aktuell_verarbeitete_uid = None
-                    last_uid = None  # Zurücksetzen, um erneute Verarbeitung zu ermöglichen
-                elif uid_hex == last_uid:
-                    time.sleep(0.1)  # Kurze Wartezeit, wenn UID gleich bleibt
-            else:
-                last_uid = None
-                aktuell_verarbeitete_uid = None
-                time.sleep(0.2)
+                    time.sleep(0.2)
 
-            connection.disconnect()
+                connection.disconnect()
 
-        except Exception as e:  # pylint: disable=W0718
-            error_message = str(e)
-            if "Card was reset" in error_message or "Card protocol mismatch" in error_message or "Card is unpowered" in error_message:
-                print(f"NFC-Kartenfehler erkannt: '{error_message}'. Ignoriere.")
-                time.sleep(0.5)
-            elif "No smart card inserted" in error_message:
+            except CardConnectionException as e:
+                error_message = str(e)
+                if "Card was reset" in error_message or "Card protocol mismatch" in error_message or "Card is unpowered" in error_message:
+                    print(f"NFC-Kartenfehler erkannt: '{error_message}'. Ignoriere.")
+                    time.sleep(0.5)
+                elif "No smart card inserted" in error_message:
+                    last_uid = None
+                    aktuell_verarbeitete_uid = None
+                    time.sleep(0.2)
+                else:
+                    last_uid = None
+                    aktuell_verarbeitete_uid = None
+                    time.sleep(0.2)
+                    print(f"Ein Fehler ist aufgetreten: {e}")
+            except Exception:  # pylint: disable=W0718
                 last_uid = None
                 aktuell_verarbeitete_uid = None
                 time.sleep(0.2)
-            else:
-                last_uid = None
-                aktuell_verarbeitete_uid = None
-                time.sleep(0.2)
-                print(f"Ein Fehler ist aufgetreten: {e}")
+                #print(f"Ein unerwarteter Fehler in der Leseschleife ist aufgetreten: {e}")
+
+    except KeyboardInterrupt:
+        print("\nNFC-Reader wird beendet.")
+    finally:
+        print("NFC-Reader beendet.")
 
 
 if __name__ == "__main__":
@@ -187,6 +199,6 @@ if __name__ == "__main__":
     except SmartcardException as e:
         print(f"Smartcard-Fehler ist aufgetreten: {e}")
         sys.exit(1)
-    except Exception as e: # pylint: disable=W0718
+    except Exception as e:  # pylint: disable=W0718
         print(f"Ein unerwarteter Fehler im Hauptteil des Skripts ist aufgetreten: {e}")
         sys.exit(1)
