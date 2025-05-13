@@ -14,13 +14,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip' # cache pip dependencies
     - name: Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install libpcsclite-dev
+        sudo apt-get update && sudo apt-get install libpcsclite-dev # needed for pyscard
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pylint
