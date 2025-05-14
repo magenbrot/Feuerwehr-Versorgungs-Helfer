@@ -174,7 +174,7 @@ def lies_nfc_kontinuierlich(nfc_reader):
                 if connection:  # Stelle sicher, dass die Verbindung geschlossen wird, wenn sie geöffnet wurde
                     try:
                         connection.disconnect()
-                    except Exception:  # pylint: disable=W0718
+                    except Exception:  # pylint: disable=W0718 # nosec B110
                         pass  # Fehler beim Trennen sind nicht kritisch
 
     except KeyboardInterrupt:
