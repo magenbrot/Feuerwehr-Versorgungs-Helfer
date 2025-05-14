@@ -16,10 +16,10 @@ from smartcard.util import toHexString
 from dotenv import load_dotenv
 import handle_requests as hr
 
-
 load_dotenv()
 api_url = os.environ.get("API_URL")
 api_key = os.environ.get("API_KEY")
+TOKEN_DELAY = 3  # Verzögerung in Sekunden, nach der ein Token wieder verwendet werden kann
 
 
 def healthcheck():
@@ -104,74 +104,73 @@ def lese_karte(connection):
         return None
 
 
-def verarbeite_uid(uid_hex, last_uid, aktuell_verarbeitete_uid):
+def verarbeite_uid(uid_hex, last_uid_time):
     """
     Verarbeitet die gelesene UID.
 
     Args:
         uid_hex: Die gelesene UID.
-        last_uid: Die zuletzt verarbeitete UID.
-        aktuell_verarbeitete_uid: Die UID, die aktuell in Verarbeitung ist.
+        last_uid_time:  Zeitpunkt der letzten erfolgreichen Verarbeitung der UID.
 
     Returns:
-        tuple: (neue_last_uid, neue_aktuell_verarbeitete_uid)
+        float: Aktualisierte letzte Verarbeitungszeit oder None.
     """
 
-    if uid_hex not in (last_uid, aktuell_verarbeitete_uid):
+    jetzt = time.time()
+
+    if last_uid_time is None or jetzt - last_uid_time >= TOKEN_DELAY:
         api_erfolgreich = token_gefunden(uid_hex)
-        if not api_erfolgreich:
-            return uid_hex, uid_hex
-        return uid_hex, None
-    if uid_hex == aktuell_verarbeitete_uid and uid_hex != last_uid:
-        return None, None  # Token entfernt/neu aufgelegt
-    if uid_hex == last_uid:
-        time.sleep(0.1)
-    return last_uid, aktuell_verarbeitete_uid
+        if api_erfolgreich:
+            return jetzt  # Aktualisiere den Zeitstempel
+        return None
+    print(f"Token {uid_hex} wurde kürzlich verarbeitet. Ignoriere.")
+    return last_uid_time
 
 
-def lies_nfc_kontinuierlich(nfc_reader):
+def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
     """
     Startet eine kontinuierliche NFC-Leseschleife für den angegebenen Reader.
 
     Erkennt neue UIDs und ruft die Funktion 'token_gefunden' auf.
-    Verhindert die mehrfache Verarbeitung derselben UID, bis das Token entfernt wird,
-    insbesondere wenn die API mit einem 404 (Benutzer nicht gefunden) antwortet.
-    Implementiert eine verlängerte Wartezeit nach erfolgreicher Verarbeitung.
+    Verhindert die mehrfache Verarbeitung derselben UID innerhalb eines Zeitfensters,
+    wenn der Token entfernt und wieder aufgelegt wird.
     Fängt KeyboardInterrupt (CTRL+C) ab, um das Programm sauber zu beenden.
 
     Args:
         nfc_reader (smartcard.pcsc.PCSCReader): Das Reader-Objekt, das für die NFC-Kommunikation verwendet wird.
     """
     print(f"Starte kontinuierliche NFC-Lesung auf Reader: {nfc_reader}")
-    last_uid = None
-    aktuell_verarbeitete_uid = None
+    last_uid_time = None  # Speichert die letzte Verarbeitungszeit der UID
 
     try:
         while True:
-            connection = None  # Wichtig: connection außerhalb des try-Blocks definieren
+            connection = None
             try:
                 connection = nfc_reader.createConnection()
                 connection.connect()
 
                 uid_hex = lese_karte(connection)
                 if uid_hex:
-                    last_uid, aktuell_verarbeitete_uid = verarbeite_uid(uid_hex, last_uid, aktuell_verarbeitete_uid)
+                    last_uid_time = verarbeite_uid(uid_hex, last_uid_time)
                 else:
+                    if last_uid_time is not None:
+                        last_uid_time = None  # Setze Zeit zurück, wenn Token entfernt
                     time.sleep(0.2)  # Wartezeit, wenn keine UID gelesen wird
 
             except CardConnectionException as e:
-                # Behandele den Fall, dass keine Karte da ist oder ein anderer Verbindungsfehler auftritt
                 error_message = str(e)
                 if "No smart card inserted" in error_message:
+                    if last_uid_time is not None:
+                        last_uid_time = None # Setze Zeit zurück, wenn keine Karte mehr da
                     time.sleep(0.2)
                 else:
                     print(f"Fehler bei der Kartenverbindung: {e}")
                     time.sleep(0.2)
-            except Exception as e:  # pylint: disable=W0718
-                print(f"Unerwarteter Fehler in der Leseschleife: {e}")
+            except Exception:  # pylint: disable=W0718
+                #print(f"Unerwarteter Fehler in der Leseschleife: {e}")
                 time.sleep(0.2)
             finally:
-                if connection:  # Stelle sicher, dass die Verbindung geschlossen wird, wenn sie geöffnet wurde
+                if connection:
                     try:
                         connection.disconnect()
                     except Exception:  # pylint: disable=W0718 # nosec B110
