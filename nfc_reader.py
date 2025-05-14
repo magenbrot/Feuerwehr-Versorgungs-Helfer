@@ -19,7 +19,7 @@ import handle_requests as hr
 load_dotenv()
 api_url = os.environ.get("API_URL")
 api_key = os.environ.get("API_KEY")
-TOKEN_DELAY = 3  # Verzögerung in Sekunden, nach der ein Token wieder verwendet werden kann
+token_delay = int(os.environ.get("TOKEN_DELAY"))
 
 
 def healthcheck():
@@ -118,7 +118,7 @@ def verarbeite_uid(uid_hex, last_uid_time):
 
     jetzt = time.time()
 
-    if last_uid_time is None or jetzt - last_uid_time >= TOKEN_DELAY:
+    if last_uid_time is None or jetzt - last_uid_time >= token_delay:
         api_erfolgreich = token_gefunden(uid_hex)
         if api_erfolgreich:
             return jetzt  # Aktualisiere den Zeitstempel
