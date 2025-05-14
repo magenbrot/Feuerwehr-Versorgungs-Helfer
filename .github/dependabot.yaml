@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: weekly
+      time: "06:15"
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    # Check for updates once a week
+    schedule:
+      interval: "weekly"
+      time: "06:30"
