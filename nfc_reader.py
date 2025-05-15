@@ -20,6 +20,7 @@ load_dotenv()
 api_url = os.environ.get("API_URL")
 api_key = os.environ.get("API_KEY")
 token_delay = int(os.environ.get("TOKEN_DELAY"))
+disable_buzzer = os.getenv('DISABLE_BUZZER', 'False') == 'True'
 
 
 def healthcheck():
@@ -140,10 +141,11 @@ def schalte_buzzer_ab(nfc_reader):
         connection = nfc_reader.createConnection()
         connection.connect()
         code_disable_buzzer = [0xFF, 0x00, 0x52, 0x00, 0x00]
-        connection.transmit(code_disable_buzzer)
+        response, sw1, sw2 = connection.transmit(code_disable_buzzer)
 
         # Überprüfe Status Code 90 00h für Erfolg
         if sw1 == 0x90 and sw2 == 0x00:
+            print(f"Antwort Daten (Hex): {toHexString(bytes(response))}")
             print("Buzzer erfolgreich ausgeschaltet (Status Code 90 00h).")
         else:
             print(f"Kommando nicht erfolgreich. Status Code: {sw1:02X} {sw2:02X}")
@@ -160,8 +162,8 @@ def schalte_buzzer_ab(nfc_reader):
         else:
             print(f"Fehler bei der Kartenverbindung: {e}")
             time.sleep(0.2)
-    except Exception:  # pylint: disable=W0718
-        #print(f"Unerwarteter Fehler in der Leseschleife: {e}")
+    except Exception as e:  # pylint: disable=W0718
+        print(f"Unerwarteter Fehler beim Lesen: {e}")
         time.sleep(0.2)
     finally:
         if connection:
@@ -258,7 +260,9 @@ if __name__ == "__main__":
                 break
 
         if ACR122U_READER:
-            schalte_buzzer_ab(ACR122U_READER)
+            if disable_buzzer:
+                print("Buzzer wird deaktiviert.")
+                schalte_buzzer_ab(ACR122U_READER)
             lies_nfc_kontinuierlich(ACR122U_READER)
         else:
             print("ACR122U Reader nicht gefunden.")
