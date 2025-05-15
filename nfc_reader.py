@@ -127,6 +127,50 @@ def verarbeite_uid(uid_hex, last_uid_time):
     return last_uid_time
 
 
+def schalte_buzzer_ab(nfc_reader):
+    """
+    Schaltet den Hardware-Buzzer ab
+
+    Args:
+        nfc_reader (smartcard.pcsc.PCSCReader): Das Reader-Objekt, das für die NFC-Kommunikation verwendet wird.
+    """
+
+    connection = None
+    try:
+        connection = nfc_reader.createConnection()
+        connection.connect()
+        code_disable_buzzer = [0xFF, 0x00, 0x52, 0x00, 0x00]
+        connection.transmit(code_disable_buzzer)
+
+        # Überprüfe Status Code 90 00h für Erfolg
+        if sw1 == 0x90 and sw2 == 0x00:
+            print("Buzzer erfolgreich ausgeschaltet (Status Code 90 00h).")
+        else:
+            print(f"Kommando nicht erfolgreich. Status Code: {sw1:02X} {sw2:02X}")
+            # Laut API Doku (Seite 9/Anhang A) bedeuten andere SWs Fehler
+            if sw1 == 0x63 and sw2 == 0x00:
+                print("Laut API-Dokumentation: Operation fehlgeschlagen (Status Code 63 00h).")
+            # Hier könnten Sie weitere spezifische Fehlercodes aus Appendix A prüfen
+    except CardConnectionException as e:
+        error_message = str(e)
+        if "No smart card inserted" in error_message:
+            if last_uid_time is not None:
+                last_uid_time = None # Setze Zeit zurück, wenn keine Karte mehr da
+            time.sleep(0.2)
+        else:
+            print(f"Fehler bei der Kartenverbindung: {e}")
+            time.sleep(0.2)
+    except Exception:  # pylint: disable=W0718
+        #print(f"Unerwarteter Fehler in der Leseschleife: {e}")
+        time.sleep(0.2)
+    finally:
+        if connection:
+            try:
+                connection.disconnect()
+            except Exception:  # pylint: disable=W0718 # nosec B110
+                pass  # Fehler beim Trennen sind nicht kritisch
+
+
 def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
     """
     Startet eine kontinuierliche NFC-Leseschleife für den angegebenen Reader.
@@ -148,6 +192,8 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
             try:
                 connection = nfc_reader.createConnection()
                 connection.connect()
+                code_disable_buzzer = [0xFF, 0x00, 0x52, 0x00, 0x00]
+                connection.transmit(code_disable_buzzer)
 
                 uid_hex = lese_karte(connection)
                 if uid_hex:
@@ -212,6 +258,7 @@ if __name__ == "__main__":
                 break
 
         if ACR122U_READER:
+            schalte_buzzer_ab(ACR122U_READER)
             lies_nfc_kontinuierlich(ACR122U_READER)
         else:
             print("ACR122U Reader nicht gefunden.")
