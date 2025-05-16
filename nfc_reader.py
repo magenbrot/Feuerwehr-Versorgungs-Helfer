@@ -185,7 +185,7 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
     Args:
         nfc_reader (smartcard.pcsc.PCSCReader): Das Reader-Objekt, das für die NFC-Kommunikation verwendet wird.
     """
-    print(f"Starte kontinuierliche NFC-Lesung auf Reader: {nfc_reader}")
+    print(f"\nStarte kontinuierliche NFC-Lesung auf Reader: {nfc_reader}")
     last_uid_time = None  # Speichert die letzte Verarbeitungszeit der UID
 
     try:
@@ -249,9 +249,10 @@ if __name__ == "__main__":
             print("Keine PC/SC-Reader gefunden.")
             sys.exit()
 
-        print("Verfügbare Reader:")
-        for i, reader in enumerate(reader_list):
-            print(f"[{i}] {reader}")
+        # deaktiviert, nützlich für Debugging
+        # print("Verfügbare Reader:")
+        # for i, reader in enumerate(reader_list):
+        #     print(f"[{i}] {reader}")
 
         ACR122U_READER = None
         for reader in reader_list:
