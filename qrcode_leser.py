@@ -187,8 +187,8 @@ def its_a_usercode(usercode):
         # Erstelle eine Transaktion wenn ein QR-Code mit a-Aktion gescannt wird
         # defaultmäßig ist das ein Getränk im Wert von 1 Credit
         artikel = "Getränk"
-        credits_change = "1"
-        person_transaktion_erstellen(code, artikel, credits_change)
+        saldo_aenderung = "-1"
+        person_transaktion_erstellen(code, artikel, saldo_aenderung)
         print("Transaktion erfolgreich regisriert. ", end='')
         abfrage = person_daten_lesen(code)
         if abfrage:
@@ -239,7 +239,7 @@ def daten_lesen_alle():
         dict or None: Die JSON-Antwort der API oder None bei einem Fehler.
     """
 
-    get_url = f"{api_url}/credits-total"
+    get_url = f"{api_url}/guthaben-alle"
     get_headers = {
         'X-API-Key': api_key
     }
