@@ -1,6 +1,6 @@
 """
 Dieses Skript liest kontinuierlich NFC-Token von einem ACR122U-Reader,
-extrahiert die UID und sendet diese an eine konfigurierte API, um eine
+extrahiert ATS und ggf. UID und sendet diese an eine konfigurierte API, um eine
 Transaktion zu erstellen. Die API-URL und der API-Schlüssel werden aus
 Umgebungsvariablen (.env-Datei) geladen.
 """
@@ -42,12 +42,12 @@ def healthcheck():
     return None
 
 
-def person_transaktion_erstellen(uid_hex):
+def person_transaktion_erstellen(token_hex):
     """
     Wird aufgerufen, wenn ein NFC-Token erkannt wurde. Sendet die UID als Bytes an die API.
 
     Args:
-        uid_hex (str): Die eindeutige ID (UID) des erkannten NFC-Tokens als Hex-String.
+        token_hex (str): Die eindeutige ID (UID) des erkannten NFC-Tokens als Hex-String.
 
     Returns:
         bool: True, wenn die API-Anfrage erfolgreich war (Statuscode 2xx), False bei anderen Fehlern.
@@ -59,14 +59,14 @@ def person_transaktion_erstellen(uid_hex):
     }
 
     try:
-        uid_hex_ohne_leerzeichen = uid_hex.replace(" ", "") # Entferne die Leerzeichen aus dem Hex-String
-        uid_bytes = binascii.unhexlify(uid_hex_ohne_leerzeichen)
-        uid_base64 = base64.b64encode(uid_bytes).decode('utf-8')
+        token_hex_ohne_leerzeichen = token_hex.replace(" ", "") # Entferne die Leerzeichen aus dem Hex-String
+        token_bytes = binascii.unhexlify(token_hex_ohne_leerzeichen)
+        token_base64 = base64.b64encode(token_bytes).decode('utf-8')
         put_daten = {
-            'uid': uid_base64,
+            'token': token_base64,
         }
 
-        print(f"NFC-Token mit UID {uid_hex} ({uid_hex_ohne_leerzeichen}) erkannt! Sende an API...")
+        print(f"NFC-Token {token_hex} ({token_hex_ohne_leerzeichen}) erkannt! Sende an API...")
         response = hr.put_request(put_url, put_headers, put_daten)
         response.raise_for_status()
         print(f"{response.json()['message']}")
@@ -74,56 +74,19 @@ def person_transaktion_erstellen(uid_hex):
         return True
     except hr.requests.exceptions.RequestException as e:
         if response is not None and response.status_code == 404:
-            print(f"Benutzer mit UID {uid_hex} nicht gefunden (404).")
+            print(f"Benutzer mit Token {token_hex} nicht gefunden (404).")
             return False  # API-Anfrage fehlgeschlagen, Benutzer nicht gefunden
-        print(f"Fehler beim Senden der UID an die API: {e}")
+        print(f"Fehler beim Senden des Tokens an die API: {e}")
         return False  # Andere API-Fehler
     except binascii.Error:
-        print(f"Fehler: Ungültiger Hexadezimalstring: {uid_hex}")
+        print(f"Fehler: Ungültiger Hexadezimalstring: {token_hex}")
         return False
     except Exception as e:  # pylint: disable=W0718
         print(f"Allgemeiner Fehler: {e}")
         return None
 
-# def person_daten_lesen(uid_hex):
-#     """
-#     Wird aufgerufen, wenn ein NFC-Token erkannt wurde. Sendet die UID als Bytes an die API.
 
-#     Args:
-#         uid_hex (str): Die eindeutige ID (UID) des erkannten NFC-Tokens als Hex-String.
-
-#     Returns:
-#         bool: True, wenn die API-Anfrage erfolgreich war (Statuscode 2xx), False bei anderen Fehlern.
-#     """
-
-#     post_url = f"{api_url}/nfc-saldoabfrage"
-#     post_headers = {
-#         'X-API-Key': api_key
-#     }
-
-#     try:
-#         uid_hex_ohne_leerzeichen = uid_hex.replace(" ", "") # Entferne die Leerzeichen aus dem Hex-String
-#         uid_bytes = binascii.unhexlify(uid_hex_ohne_leerzeichen)
-#         uid_base64 = base64.b64encode(uid_bytes).decode('utf-8')
-#         post_daten = {
-#             'uid': uid_base64,
-#         }
-#         response = hr.post_request(post_url, post_headers, post_daten)
-#         response.raise_for_status()
-#         print(f"API-Antwort: {response.json()}")
-#         return True
-#     except hr.requests.exceptions.RequestException as e:
-#         if response is not None and response.status_code == 404:
-#             print(f"Benutzer mit UID {uid_hex} nicht gefunden (404).")
-#             return False  # API-Anfrage fehlgeschlagen, Benutzer nicht gefunden
-#         print(f"Fehler beim Senden der UID an die API: {e}")
-#         return False  # Andere API-Fehler
-#     except binascii.Error:
-#         print(f"Fehler: Ungültiger Hexadezimalstring: {uid_hex}")
-#         return False
-
-
-def lese_token(connection):
+def lese_nfc_token_uid(connection):
     """
     Liest die UID von dem Token.
 
@@ -145,13 +108,35 @@ def lese_token(connection):
         return None
 
 
-def verarbeite_uid(uid_hex, last_uid_time):
+def lese_nfc_token_ats(connection):
     """
-    Verarbeitet die gelesene UID.
+    Liest die ATS von dem Token.
 
     Args:
-        uid_hex: Die gelesene UID.
-        last_uid_time:  Zeitpunkt der letzten erfolgreichen Verarbeitung der UID.
+        connection: Die Tokennverbindung.
+
+    Returns:
+        str: Die ATS als Hex-String, oder None im Fehlerfall.
+    """
+    try:
+        get_ats = [0xFF, 0xCA, 0x01, 0x00, 0x00]
+        response, sw1, sw2 = connection.transmit(get_ats)
+
+        if sw1 == 0x90 and sw2 == 0x00:
+            return toHexString(response)
+        return None
+    except Exception as e:  # pylint: disable=W0718
+        print(f"Fehler beim Lesen des Tokens: {e}")
+        return None
+
+
+def verarbeite_token(token_hex, last_token_time):
+    """
+    Verarbeitet den gelesenen Token.
+
+    Args:
+        token_hex: Daten des Tokens (UID oder ATS)
+        last_token_time:  Zeitpunkt der letzten erfolgreichen Verarbeitung des Tokens.
 
     Returns:
         float: Aktualisierte letzte Verarbeitungszeit oder None.
@@ -159,15 +144,15 @@ def verarbeite_uid(uid_hex, last_uid_time):
 
     jetzt = time.time()
 
-    if last_uid_time is None or jetzt - last_uid_time >= token_delay:
-        transaktion_erfolgreich = person_transaktion_erstellen(uid_hex)
-        #saldo_ausgeben_erfolgreich = person_daten_lesen(uid_hex)
+    if last_token_time is None or jetzt - last_token_time >= token_delay:
+        transaktion_erfolgreich = person_transaktion_erstellen(token_hex)
+        #saldo_ausgeben_erfolgreich = person_daten_lesen(token_hex)
         #if transaktion_erfolgreich and saldo_ausgeben_erfolgreich:
         if transaktion_erfolgreich:
             return jetzt  # Aktualisiere den Zeitstempel
         return None
-    print(f"Token {uid_hex} wurde kürzlich verarbeitet. Ignoriere.")
-    return last_uid_time
+    print(f"Token {token_hex} wurde kürzlich verarbeitet. Ignoriere.")
+    return last_token_time
 
 
 def schalte_buzzer_ab(nfc_reader):
@@ -198,8 +183,8 @@ def schalte_buzzer_ab(nfc_reader):
     except CardConnectionException as e:
         error_message = str(e)
         if "No smart card inserted" in error_message:
-            if last_uid_time is not None:
-                last_uid_time = None # Setze Zeit zurück, wenn kein Token mehr da
+            if last_token_time is not None:
+                last_token_time = None # Setze Zeit zurück, wenn kein Token mehr da
             time.sleep(0.2)
         else:
             print(f"Fehler bei der Tokenverbindung: {e}")
@@ -219,16 +204,21 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
     """
     Startet eine kontinuierliche NFC-Leseschleife für den angegebenen Reader.
 
-    Erkennt neue UIDs und ruft die Funktion 'token_gefunden' auf.
-    Verhindert die mehrfache Verarbeitung derselben UID innerhalb eines Zeitfensters,
+    Erkennt neue Token und ruft die Funktion 'token_gefunden' auf.
+
+    Verhindert die mehrfache Verarbeitung desselben Tokens innerhalb eines Zeitfensters,
     wenn der Token entfernt und wieder aufgelegt wird.
+
+    Handys liefern eine zufällige UID. Deswegen wird zuerst versucht Daten per ATS zu bekommen.
+    Sofern das nicht funktioniert wird die UID abgefragt.
+
     Fängt KeyboardInterrupt (CTRL+C) ab, um das Programm sauber zu beenden.
 
     Args:
         nfc_reader (smartcard.pcsc.PCSCReader): Das Reader-Objekt, das für die NFC-Kommunikation verwendet wird.
     """
     print(f"\nStarte kontinuierliche NFC-Lesung auf Reader: {nfc_reader}")
-    last_uid_time = None  # Speichert die letzte Verarbeitungszeit der UID
+    last_token_time = None  # Speichert die letzte Verarbeitungszeit des Tokens
 
     try:
         while True:
@@ -239,19 +229,30 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
                 code_disable_buzzer = [0xFF, 0x00, 0x52, 0x00, 0x00]
                 connection.transmit(code_disable_buzzer)
 
-                uid_hex = lese_token(connection)
-                if uid_hex:
-                    last_uid_time = verarbeite_uid(uid_hex, last_uid_time)
+                ats_hex = None
+                uid_hex = None
+
+                ats_hex = lese_nfc_token_ats(connection)
+                if ats_hex:
+                    #print("ATS gefunden.")
+                    last_token_time = verarbeite_token(ats_hex, last_token_time)
                 else:
-                    if last_uid_time is not None:
-                        last_uid_time = None  # Setze Zeit zurück, wenn Token entfernt
-                    time.sleep(0.2)  # Wartezeit, wenn keine UID gelesen wird
+                    #print("Kein ATS gefunden.")
+                    uid_hex = lese_nfc_token_uid(connection)
+                    if uid_hex:
+                        #print("UID gefunden.")
+                        last_token_time = verarbeite_token(uid_hex, last_token_time)
+
+                if not ats_hex and not uid_hex:
+                    if last_token_time is not None:
+                        last_token_time = None  # Setze Zeit zurück, wenn Token entfernt
+                    time.sleep(0.2)  # Wartezeit, wenn kein Token gelesen wird
 
             except CardConnectionException as e:
                 error_message = str(e)
                 if "No smart card inserted" in error_message:
-                    if last_uid_time is not None:
-                        last_uid_time = None # Setze Zeit zurück, wenn kein Token mehr da
+                    if last_token_time is not None:
+                        last_token_time = None # Setze Zeit zurück, wenn kein Token mehr da
                     time.sleep(0.2)
                 else:
                     print(f"Fehler bei der Tokenverbindung: {e}")
