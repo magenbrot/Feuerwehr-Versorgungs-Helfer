@@ -13,14 +13,11 @@ import handle_requests as hr
 # Format der QR-Codes
 # Der Benutzercode hat 11 Stellen.
 # Die letzte Stelle kann sein:
-# a (addiere 1 Credit)
-# r (Benutzer auf 0 setzen)
-# k (gib den Kontostand aus)
-# l (Benutzer löschen)
+# a (erstelle eine Transaktion Saldo -1)
+# k (gib den Saldo aus)
 
 # Spezialcodes:
-# Alle Benutzerkontostände ausgeben: 39b3bca191be67164317227fec3bed
-# Alle Kontostände auf 0 setzen: 6f75c49f98c66696babf1e1e0fe91a2
+# Alle Salden anzeigen: 39b3bca191be67164317227fec3bed
 
 load_dotenv()
 api_url = os.environ.get("API_URL")
@@ -52,7 +49,7 @@ def healthcheck():
     return None
 
 
-def person_einfuegen(person_code, person_name):
+def person_einfuegen(person_code, person_nachname, person_vorname):
     """
     Eine neue Person in die Datenbank einfügen.
 
@@ -68,24 +65,31 @@ def person_einfuegen(person_code, person_name):
 
     post_daten = {
         'code': person_code,
-        'name': person_name
+        'nachname': person_nachname,
+        'vorname': person_vorname
     }
 
     # Erzeuge den Hash des Standardpassworts
-    hashed_password = generate_password_hash(default_password)
+    try:
+        hashed_password = generate_password_hash(default_password)
+    except Exception as e: # pylint: disable=W0718
+        print(f"FEHLER: Konnte Passwort-Hash nicht erzeugen: {e}")
+        return False
 
     post_daten = {
         'code': person_code,
-        'name': person_name,
+        'nachname': person_nachname,
+        'vorname': person_vorname,
         'password': hashed_password  # Füge das gehashte Passwort hinzu
     }
 
+    #print(f"POST-URL: {post_url}, POST-Headers: {post_headers}, POST-Daten: {post_daten}")
     post_response = hr.post_request(post_url, post_headers, post_daten)
     if post_response:
         # print("POST Response Body:")
         # print(post_response.json())
         print(
-            f"\nDatensatz für '{person_name}' wurde hinzugefügt.")
+            f"\nDatensatz für '{person_nachname} {person_vorname}' wurde hinzugefügt.")
 
 
 def person_existent(person_code):
@@ -107,6 +111,7 @@ def person_existent(person_code):
 
     get_response = hr.get_request(get_url, get_headers)
 
+    #print(f"GET-URL: {get_url}, GET-Headers: {get_headers}, GET-Response: {get_response}")
     person_daten = get_response.json()
     if None in person_daten:
         print("Fehler beim Abrufen der Personendaten.")
@@ -225,34 +230,26 @@ if __name__ == "__main__":
                 if len(row) >= 2:  # Es sollte Code und Nachname Vorname in der Datei stehen
                     # Nimm den ersten Eintrag (den 10-stelligen Code) und entferne Leerzeichen
                     code = row[0].strip()
-                    person = row[1].strip()
+                    nachname = row[1].strip()
+                    vorname = row[2].strip()
                     # Überprüfe, ob es ein 10-stelliger Zahlencode ist
                     if len(code) == 10 and code.isdigit():
                         # Prüfe, ob die Person bereits angelegt wurde
 
                         if not person_existent(code) or args.force_creation:
                             # Speichere Person in Datenbank
-                            person_einfuegen(code, person)
-                            # Aktion a - Addiere 1 Credit
+                            person_einfuegen(code, nachname, vorname)
+                            # Aktion a - erstelle Transaktion Saldo -1
+                            os.makedirs(AUSGABE_ORDNER + nachname + " " + vorname, exist_ok=True)
                             dateiname = os.path.join(
-                                AUSGABE_ORDNER, f"{code} - {person} - Addiere 1 Credit.png")
+                                AUSGABE_ORDNER, nachname + " " + vorname, "1x bezahlen.png")
                             erzeuge_qr_code(
-                                code + "a", "1 Credit berechnen", dateiname)
-                            # Aktion r - Credits auf 0 setzen
+                                code + "a", "1x bezahlen", dateiname)
+                            # Aktion k - Saldo anzeigen
                             dateiname = os.path.join(
-                                AUSGABE_ORDNER, f"{code} - {person} - Credits auf 0 setzen.png")
+                                AUSGABE_ORDNER, nachname + " " + vorname, "Saldo anzeigen.png")
                             erzeuge_qr_code(
-                                code + "r", "Kontostand auf 0 setzen", dateiname)
-                            # Aktion k - Kontostand ausgeben
-                            dateiname = os.path.join(
-                                AUSGABE_ORDNER, f"{code} - {person} - Kontostand ausgeben.png")
-                            erzeuge_qr_code(
-                                code + "k", "Kontostand ausgeben", dateiname)
-                            # Aktion l - Person löschen
-                            dateiname = os.path.join(
-                                AUSGABE_ORDNER, f"{code} - {person} - Person löschen.png")
-                            erzeuge_qr_code(
-                                code + "l", "Benutzer löschen", dateiname)
+                                code + "k", "Saldo anzeigen", dateiname)
                         else:
                             print(f"Person mit Code {code} existiert bereits in der Datenbank.")
                     else:
@@ -262,13 +259,9 @@ if __name__ == "__main__":
                     print(f"Ungültige Zeile in der CSV-Datei: '{row}'.")
 
         print("\nSondercodes speichern:")
-        dateiname = os.path.join(AUSGABE_ORDNER + 'admin-codes', "Alle Personen ausgeben.png")
+        dateiname = os.path.join(AUSGABE_ORDNER + 'admin-codes', "Alle Personen anzeigen.png")
         erzeuge_qr_code("39b3bca191be67164317227fec3bed",
-                        "Alle Personen ausgeben", dateiname)
-        dateiname = os.path.join(
-            AUSGABE_ORDNER + 'admin-codes', "Alle Konten auf 0 setzen.png")
-        erzeuge_qr_code("6f75c49f98c66696babf1e1e0fe91a2",
-                        "Alle Konten auf 0 setzen", dateiname)
+                        "Alle Personen anzeigen", dateiname)
 
         print(
             f"\nQR-Codes wurden basierend auf den Codes in '{CSV_PERSONEN}' im Ordner '{AUSGABE_ORDNER}' gespeichert.")
@@ -281,5 +274,7 @@ if __name__ == "__main__":
         print(f"Ein Fehler beim Lesen der CSV-Datei ist aufgetreten: {e}.")
     except KeyboardInterrupt:
         pass
+    except Exception as e: # pylint: disable=W0718
+        print(f"Es ist ein allgemeiner Fehler aufgetreten: {e}")
     finally:
         exit_gracefully()

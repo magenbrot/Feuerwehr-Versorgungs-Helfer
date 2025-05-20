@@ -42,7 +42,7 @@ def healthcheck():
     return None
 
 
-def token_gefunden(uid_hex):
+def person_transaktion_erstellen(uid_hex):
     """
     Wird aufgerufen, wenn ein NFC-Token erkannt wurde. Sendet die UID als Bytes an die API.
 
@@ -53,14 +53,13 @@ def token_gefunden(uid_hex):
         bool: True, wenn die API-Anfrage erfolgreich war (Statuscode 2xx), False bei anderen Fehlern.
     """
 
-    put_url = f"{api_url}/nfc-transaction"
+    put_url = f"{api_url}/nfc-transaktion"
     put_headers = {
         'X-API-Key': api_key
     }
 
     try:
-        # Entferne die Leerzeichen aus dem Hex-String
-        uid_hex_ohne_leerzeichen = uid_hex.replace(" ", "")
+        uid_hex_ohne_leerzeichen = uid_hex.replace(" ", "") # Entferne die Leerzeichen aus dem Hex-String
         uid_bytes = binascii.unhexlify(uid_hex_ohne_leerzeichen)
         uid_base64 = base64.b64encode(uid_bytes).decode('utf-8')
         put_daten = {
@@ -70,7 +69,8 @@ def token_gefunden(uid_hex):
         print(f"NFC-Token mit UID {uid_hex} ({uid_hex_ohne_leerzeichen}) erkannt! Sende an API...")
         response = hr.put_request(put_url, put_headers, put_daten)
         response.raise_for_status()
-        print(f"API-Antwort: {response.json()}")
+        print(f"{response.json()['message']}")
+        #print(f"API-Antwort: {response.json()}")
         return True
     except hr.requests.exceptions.RequestException as e:
         if response is not None and response.status_code == 404:
@@ -81,14 +81,54 @@ def token_gefunden(uid_hex):
     except binascii.Error:
         print(f"Fehler: Ungültiger Hexadezimalstring: {uid_hex}")
         return False
+    except Exception as e:  # pylint: disable=W0718
+        print(f"Allgemeiner Fehler: {e}")
+        return None
+
+# def person_daten_lesen(uid_hex):
+#     """
+#     Wird aufgerufen, wenn ein NFC-Token erkannt wurde. Sendet die UID als Bytes an die API.
+
+#     Args:
+#         uid_hex (str): Die eindeutige ID (UID) des erkannten NFC-Tokens als Hex-String.
+
+#     Returns:
+#         bool: True, wenn die API-Anfrage erfolgreich war (Statuscode 2xx), False bei anderen Fehlern.
+#     """
+
+#     post_url = f"{api_url}/nfc-saldoabfrage"
+#     post_headers = {
+#         'X-API-Key': api_key
+#     }
+
+#     try:
+#         uid_hex_ohne_leerzeichen = uid_hex.replace(" ", "") # Entferne die Leerzeichen aus dem Hex-String
+#         uid_bytes = binascii.unhexlify(uid_hex_ohne_leerzeichen)
+#         uid_base64 = base64.b64encode(uid_bytes).decode('utf-8')
+#         post_daten = {
+#             'uid': uid_base64,
+#         }
+#         response = hr.post_request(post_url, post_headers, post_daten)
+#         response.raise_for_status()
+#         print(f"API-Antwort: {response.json()}")
+#         return True
+#     except hr.requests.exceptions.RequestException as e:
+#         if response is not None and response.status_code == 404:
+#             print(f"Benutzer mit UID {uid_hex} nicht gefunden (404).")
+#             return False  # API-Anfrage fehlgeschlagen, Benutzer nicht gefunden
+#         print(f"Fehler beim Senden der UID an die API: {e}")
+#         return False  # Andere API-Fehler
+#     except binascii.Error:
+#         print(f"Fehler: Ungültiger Hexadezimalstring: {uid_hex}")
+#         return False
 
 
-def lese_karte(connection):
+def lese_token(connection):
     """
-    Liest die UID von der Karte.
+    Liest die UID von dem Token.
 
     Args:
-        connection: Die Kartenverbindung.
+        connection: Die Tokennverbindung.
 
     Returns:
         str: Die UID als Hex-String, oder None im Fehlerfall.
@@ -101,7 +141,7 @@ def lese_karte(connection):
             return toHexString(response)
         return None
     except Exception as e:  # pylint: disable=W0718
-        print(f"Fehler beim Lesen der Karte: {e}")
+        print(f"Fehler beim Lesen des Tokens: {e}")
         return None
 
 
@@ -120,8 +160,10 @@ def verarbeite_uid(uid_hex, last_uid_time):
     jetzt = time.time()
 
     if last_uid_time is None or jetzt - last_uid_time >= token_delay:
-        api_erfolgreich = token_gefunden(uid_hex)
-        if api_erfolgreich:
+        transaktion_erfolgreich = person_transaktion_erstellen(uid_hex)
+        #saldo_ausgeben_erfolgreich = person_daten_lesen(uid_hex)
+        #if transaktion_erfolgreich and saldo_ausgeben_erfolgreich:
+        if transaktion_erfolgreich:
             return jetzt  # Aktualisiere den Zeitstempel
         return None
     print(f"Token {uid_hex} wurde kürzlich verarbeitet. Ignoriere.")
@@ -157,10 +199,10 @@ def schalte_buzzer_ab(nfc_reader):
         error_message = str(e)
         if "No smart card inserted" in error_message:
             if last_uid_time is not None:
-                last_uid_time = None # Setze Zeit zurück, wenn keine Karte mehr da
+                last_uid_time = None # Setze Zeit zurück, wenn kein Token mehr da
             time.sleep(0.2)
         else:
-            print(f"Fehler bei der Kartenverbindung: {e}")
+            print(f"Fehler bei der Tokenverbindung: {e}")
             time.sleep(0.2)
     except Exception as e:  # pylint: disable=W0718
         print(f"Unerwarteter Fehler beim Lesen: {e}")
@@ -197,7 +239,7 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
                 code_disable_buzzer = [0xFF, 0x00, 0x52, 0x00, 0x00]
                 connection.transmit(code_disable_buzzer)
 
-                uid_hex = lese_karte(connection)
+                uid_hex = lese_token(connection)
                 if uid_hex:
                     last_uid_time = verarbeite_uid(uid_hex, last_uid_time)
                 else:
@@ -209,10 +251,10 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
                 error_message = str(e)
                 if "No smart card inserted" in error_message:
                     if last_uid_time is not None:
-                        last_uid_time = None # Setze Zeit zurück, wenn keine Karte mehr da
+                        last_uid_time = None # Setze Zeit zurück, wenn kein Token mehr da
                     time.sleep(0.2)
                 else:
-                    print(f"Fehler bei der Kartenverbindung: {e}")
+                    print(f"Fehler bei der Tokenverbindung: {e}")
                     time.sleep(0.2)
             except Exception:  # pylint: disable=W0718
                 #print(f"Unerwarteter Fehler in der Leseschleife: {e}")
@@ -274,7 +316,7 @@ if __name__ == "__main__":
         print(f"{e}")
         sys.exit(1)
     except CardConnectionException as e:
-        print(f"Fehler bei der Kartenverbindung: {e}")
+        print(f"Fehler bei der Tokenverbindung: {e}")
         sys.exit(1)
     except SmartcardException as e:
         print(f"Smartcard-Fehler ist aufgetreten: {e}")
