@@ -13,14 +13,13 @@ import handle_requests as hr
 # Format der QR-Codes
 # Der Benutzercode hat 11 Stellen.
 # Die letzte Stelle kann sein:
-# a (addiere 1 Credit)
-# r (Benutzer auf 0 setzen)
-# k (gib den Kontostand aus)
-# l (Benutzer löschen)
+# a Saldoänderung -1
+# r Benutzer auf 0 setzen
+# k gib das Saldo des Benutzers aus
+# l Benutzer löschen -- Funktion auskommentiert
 
 # Spezialcodes:
-# Alle Benutzerkontostände ausgeben: 39b3bca191be67164317227fec3bed
-# Alle Kontostände auf 0 setzen: 6f75c49f98c66696babf1e1e0fe91a2
+# Das Saldo aller Benutzer anzeigen: 39b3bca191be67164317227fec3bed
 
 # debugging
 # import pdb; pdb.set_trace()
@@ -38,7 +37,7 @@ def json_daten_ausgeben(daten):
         daten (str): Ein JSON-String.
     """
 
-    spalte1_breite = 35
+    spalte1_breite = 20
     spalte2_breite = 2
 
     # Prüfe, ob die Eingabe ein String ist
@@ -54,31 +53,20 @@ def json_daten_ausgeben(daten):
 
     # Stelle sicher, dass wir eine Liste von Dictionaries haben.
     if isinstance(daten_obj, list):
-        print("\nAktuelle Kontostände:")
+        print("\nAktuelle Salden:")
         print("-" * 40)
         for eintrag in daten_obj:
             if isinstance(eintrag, dict):
-                # print("-" * 40)
-                # print(f"ID: {eintrag.get('id', 'N/A')}")
-                # print(f"Code: {eintrag.get('code', 'N/A')}")
-                # print(f"Name: {eintrag.get('name', 'N/A')}")
-                # print(f"Kontostand: {eintrag.get('kontostand', 'N/A')}")
-                # print(f"{eintrag.get('name', 'N/A')}: {eintrag.get('kontostand', 'N/A')}")
                 print(
-                    f"{eintrag.get('benutzername', 'N/A'):<{spalte1_breite}}: {eintrag.get('summe_credits', 'N/A'):>{spalte2_breite}}")
+                    f"{eintrag.get('nachname', 'N/A')} {eintrag.get('vorname', 'N/A'):<{spalte1_breite}}: {eintrag.get('saldo', 'N/A'):>{spalte2_breite}}")
             else:
                 print(
                     "Fehler: Jeder Eintrag in der Liste sollte ein Dictionary sein.")
                 return
         print("-" * 40)
     elif isinstance(daten_obj, dict):
-        # print("-" * 40)
-        # print(f"ID: {daten_obj.get('id', 'N/A')}")
-        # print(f"Code: {daten_obj.get('code', 'N/A')}")
-        # print(f"Name: {daten_obj.get('name', 'N/A')}")
-        # print(f"Kontostand: {daten_obj.get('kontostand', 'N/A')}")
         print(
-            f"{daten_obj.get('benutzername', 'N/A')}: {daten_obj.get('summe_credits', 'N/A')}")
+            f"{daten_obj.get('nachname', 'N/A')} {daten_obj.get('vorname', 'N/A')}: {daten_obj.get('saldo', 'N/A')}")
     else:
         print(
             "Fehler: Die Eingabe sollte ein gültiger JSON-String oder eine Liste/Dictionary sein.")
@@ -155,9 +143,6 @@ def werte_qr_code_aus(qr_code):
     if (qr_code) == "39b3bca191be67164317227fec3bed":
         daten_alle = daten_lesen_alle()
         json_daten_ausgeben(daten_alle)
-    elif (qr_code) == "6f75c49f98c66696babf1e1e0fe91a2":
-        kontostand_reset_alle()
-        print("Kontostand für alle Personen wurde auf 0 gesetzt.")
     else:
         if (len(qr_code)) == 11:
             its_a_usercode(qr_code)
@@ -177,37 +162,29 @@ def its_a_usercode(usercode):
     """
 
     print("")
-    aktion = usercode[-1]
-    code = usercode[:10]
+    aktion = usercode[-1] # letztes Zeichen im usercode bestimmt die auszuführende Aktion
+    code = usercode[:10] # die ersten 10 Stellen des usercodes sind dem Benutzer zugeordnet
 
     # lade den Benutzer aus der DB
     print(f"Benutzer: {code} - Aktion: {aktion}. ", end='')
 
     if (aktion) == "a":
         # Erstelle eine Transaktion wenn ein QR-Code mit a-Aktion gescannt wird
-        # defaultmäßig ist das ein Getränk im Wert von 1 Credit
+        # standardmäßig ist das ein Getränk im Wert von -1 auf den Saldo
         artikel = "Getränk"
         saldo_aenderung = "-1"
         person_transaktion_erstellen(code, artikel, saldo_aenderung)
         print("Transaktion erfolgreich regisriert. ", end='')
         abfrage = person_daten_lesen(code)
         if abfrage:
-            name, aktueller_kontostand = abfrage
-            print(f"Der Kontostand für {name} ist jetzt {aktueller_kontostand}.")
+            nachname, vorname, saldo = abfrage
+            print(f"Der Saldo für {nachname} {vorname} ist jetzt {saldo}.")
     elif (aktion) == "k":
-        # Aktuellen Kontostand ausgeben
+        # Aktuelles Saldo anzeigen
         abfrage = person_daten_lesen(code)
         if abfrage:
-            name, aktueller_kontostand = abfrage
-            print(f"Der Kontostand für {name} ist {aktueller_kontostand}.")
-    elif (aktion) == "r":
-        # Kontostand auf 0 setzen
-        person_transaktionen_loeschen(code)
-        print(f"Kontostand für {code} wurde auf 0 gesetzt.")
-    elif (aktion) == "l":
-        # Person löschen
-        person_loeschen(code)
-        print(f"Person mit {code} wurde gelöscht.")
+            nachname, vorname, saldo = abfrage
+            print(f"Der Saldo für {nachname} {vorname} ist {saldo}.")
     else:
         print("Mit dem Code stimmt etwas nicht.")
 
@@ -233,13 +210,13 @@ def healthcheck():
 
 def daten_lesen_alle():
     """
-    Daten aller Benutzer ausgeben.
+    Daten aller Benutzer anzeigen.
 
     Returns:
         dict or None: Die JSON-Antwort der API oder None bei einem Fehler.
     """
 
-    get_url = f"{api_url}/guthaben-alle"
+    get_url = f"{api_url}/saldo-alle"
     get_headers = {
         'X-API-Key': api_key
     }
@@ -250,35 +227,15 @@ def daten_lesen_alle():
     return None
 
 
-def kontostand_reset_alle():
-    """
-    Kontostand aller Personen auf 0 setzen.
-
-    Returns:
-        dict or None: Die JSON-Antwort der API oder None bei einem Fehler.
-    """
-
-    delete_url = f"{api_url}/transaktionen"
-
-    delete_headers = {
-        'X-API-Key': api_key
-    }
-
-    delete_response = hr.delete_request(delete_url, delete_headers)
-    if delete_response:
-        return delete_response.json()
-    return None
-
-
 def person_daten_lesen(code):
     """
-    Daten einer Person ausgeben, gibt die summierten Credits zurück.
+    Daten einer Person anzeigen, gibt den aktuellen Saldo zurück.
 
     Args:
         code (str): Der Code der Person, deren Daten gelesen werden sollen.
 
     Returns:
-        tuple or None: Ein Tupel mit (name, summe_credits) oder None bei einem Fehler.
+        tuple or None: Ein Tupel mit (nachname, vorname, saldo) oder None bei einem Fehler.
     """
 
     get_url = f"{api_url}/person/{code}"
@@ -292,43 +249,20 @@ def person_daten_lesen(code):
     person_daten = get_response.json()
     if 'error' in person_daten:
         print(f"Fehler beim Abrufen der Personendaten: {person_daten['error']}.")
-        return None  # Oder eine andere Fehlerbehandlung, z.B. eine Exception werfen
+        return None
     if person_daten:
-        return (person_daten['name'], person_daten['summe_credits'])
-    return None # Fallback, falls die Antwort leer ist (was unwahrscheinlich ist, wenn kein Fehler vorliegt)
-
-
-def person_loeschen(code):
-    """
-    Eine Person aus der Datenbank löschen.
-
-    Args:
-        code (str): Der Code der zu löschenden Person.
-
-    Returns:
-        requests.Response or None: Das Response-Objekt oder None bei einem Fehler.
-    """
-
-    delete_url = f"{api_url}/person/{code}"
-
-    delete_headers = {
-        'X-API-Key': api_key
-    }
-
-    delete_response = hr.delete_request(delete_url, delete_headers)
-    if delete_response:
-        return delete_response
+        return (person_daten['nachname'], person_daten['vorname'], person_daten['saldo'])
     return None
 
 
-def person_transaktion_erstellen(code, artikel, credits_change):
+def person_transaktion_erstellen(code, artikel, saldo_aenderung):
     """
     Transaktion für eine Person ausführen.
 
     Args:
         code (str): Der Code der Person, für die die Transaktion erstellt wird.
         artikel (str): Die Beschreibung des Artikels.
-        credits_change (str): Die Änderung der Credits.
+        saldo_aenderung (str): Der Wert um den sich der Saldo ändern soll.
 
     Returns:
         requests.Response or None: Das Response-Objekt oder None bei einem Fehler.
@@ -341,34 +275,12 @@ def person_transaktion_erstellen(code, artikel, credits_change):
 
     put_daten = {
         'artikel': artikel,
-        'credits': credits_change
+        'saldo_aenderung': saldo_aenderung
     }
 
     put_response = hr.put_request(put_url, put_headers, put_daten)
     if put_response:
         return put_response
-    return None
-
-
-def person_transaktionen_loeschen(code):
-    """
-    Transaktionen einer Person löschen.
-
-    Args:
-        code (str): Der Code der Person, deren Transaktionen gelöscht werden sollen.
-
-    Returns:
-        requests.Response or None: Das Response-Objekt oder None bei einem Fehler.
-    """
-
-    delete_url = f"{api_url}/person/transaktionen/{code}"
-    delete_headers = {
-        'X-API-Key': api_key
-    }
-
-    delete_response = hr.delete_request(delete_url, delete_headers)
-    if delete_response:
-        return delete_response
     return None
 
 
