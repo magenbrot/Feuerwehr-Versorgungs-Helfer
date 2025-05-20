@@ -74,7 +74,7 @@ def person_einfuegen(person_code, person_nachname, person_vorname):
         hashed_password = generate_password_hash(default_password)
     except Exception as e: # pylint: disable=W0718
         print(f"FEHLER: Konnte Passwort-Hash nicht erzeugen: {e}")
-        return False
+        return
 
     post_daten = {
         'code': person_code,
