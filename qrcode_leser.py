@@ -170,8 +170,8 @@ def its_a_usercode(usercode):
 
     if (aktion) == "a":
         # Erstelle eine Transaktion wenn ein QR-Code mit a-Aktion gescannt wird
-        # standardmäßig ist das ein Getränk im Wert von -1 auf den Saldo
-        artikel = "Getränk"
+        # standardmäßig ist das "QR-Code-Scan" im Wert von -1 auf den Saldo
+        artikel = "QR-Code-Scan"
         saldo_aenderung = "-1"
         person_transaktion_erstellen(code, artikel, saldo_aenderung)
         print("Transaktion erfolgreich regisriert. ", end='')
