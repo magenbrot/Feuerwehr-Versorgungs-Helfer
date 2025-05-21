@@ -27,7 +27,7 @@ import handle_requests as hr
 load_dotenv()
 api_url=os.environ.get("API_URL")
 api_key=os.environ.get("API_KEY")
-
+my_name = os.environ.get("MY_NAME")
 
 def json_daten_ausgeben(daten):
     """
@@ -164,16 +164,14 @@ def its_a_usercode(usercode):
     print("")
     aktion = usercode[-1] # letztes Zeichen im usercode bestimmt die auszuführende Aktion
     code = usercode[:10] # die ersten 10 Stellen des usercodes sind dem Benutzer zugeordnet
+    beschreibung = my_name
 
     # lade den Benutzer aus der DB
     print(f"Benutzer: {code} - Aktion: {aktion}. ", end='')
 
     if (aktion) == "a":
-        # Erstelle eine Transaktion wenn ein QR-Code mit a-Aktion gescannt wird
-        # standardmäßig ist das "QR-Code-Scan" im Wert von -1 auf den Saldo
-        artikel = "QR-Code-Scan"
         saldo_aenderung = "-1"
-        person_transaktion_erstellen(code, artikel, saldo_aenderung)
+        person_transaktion_erstellen(code, beschreibung, saldo_aenderung)
         print("Transaktion erfolgreich regisriert. ", end='')
         abfrage = person_daten_lesen(code)
         if abfrage:
@@ -255,13 +253,13 @@ def person_daten_lesen(code):
     return None
 
 
-def person_transaktion_erstellen(code, artikel, saldo_aenderung):
+def person_transaktion_erstellen(code, beschreibung, saldo_aenderung):
     """
     Transaktion für eine Person ausführen.
 
     Args:
         code (str): Der Code der Person, für die die Transaktion erstellt wird.
-        artikel (str): Die Beschreibung des Artikels.
+        beschreibung (str): Die Beschreibung der Buchung.
         saldo_aenderung (str): Der Wert um den sich der Saldo ändern soll.
 
     Returns:
@@ -274,7 +272,7 @@ def person_transaktion_erstellen(code, artikel, saldo_aenderung):
     }
 
     put_daten = {
-        'artikel': artikel,
+        'beschreibung': beschreibung,
         'saldo_aenderung': saldo_aenderung
     }
 

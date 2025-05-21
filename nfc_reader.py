@@ -20,6 +20,7 @@ load_dotenv()
 api_url = os.environ.get("API_URL")
 api_key = os.environ.get("API_KEY")
 token_delay = int(os.environ.get("TOKEN_DELAY"))
+my_name = os.environ.get("MY_NAME")
 disable_buzzer = os.getenv('DISABLE_BUZZER', 'False') == 'True'
 
 
@@ -53,6 +54,8 @@ def person_transaktion_erstellen(token_hex):
         bool: True, wenn die API-Anfrage erfolgreich war (Statuscode 2xx), False bei anderen Fehlern.
     """
 
+    beschreibung=my_name
+
     put_url = f"{api_url}/nfc-transaktion"
     put_headers = {
         'X-API-Key': api_key
@@ -64,6 +67,7 @@ def person_transaktion_erstellen(token_hex):
         token_base64 = base64.b64encode(token_bytes).decode('utf-8')
         put_daten = {
             'token': token_base64,
+            'beschreibung': beschreibung,
         }
 
         print(f"NFC-Token {token_hex} ({token_hex_ohne_leerzeichen}) erkannt! Sende an API...")
