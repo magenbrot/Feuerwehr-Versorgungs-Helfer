@@ -1,5 +1,7 @@
 # Feuerwehr-Versorgungs-Helfer: Client-Anwendungen & Verwaltungs-Skripte 📱💻🛠️
 
+## Übersicht ℹ️
+
 Dieses Repository enthält Client-Anwendungen (Terminals) und Verwaltungs-Skripte für das digitale Strichlisten-System "Feuerwehr-Versorgungs-Helfer". Diese Python-Skripte ermöglichen es Benutzern, über QR-Codes oder NFC-Tokens "Striche zu machen" (d.h. Guthaben abzubuchen) bzw. Administratoren, Benutzer anzulegen und QR-Codes zu generieren. Alle Komponenten kommunizieren mit dem [separaten Backend-System](https://github.com/magenbrot/Feuerwehr-Versorgungs-Helfer-API).
 
 ## Funktionsweise 🎯
