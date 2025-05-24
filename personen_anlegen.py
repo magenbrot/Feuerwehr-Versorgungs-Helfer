@@ -1,23 +1,11 @@
 """Personen aus CSV lesen und in der Datenbank anlegen"""
 
-import argparse
 import csv
 import os
 import sys
 from dotenv import load_dotenv
-import qrcode
-from PIL import Image, ImageDraw, ImageFont
 from werkzeug.security import generate_password_hash
 import handle_requests as hr
-
-# Format der QR-Codes
-# Der Benutzercode hat 11 Stellen.
-# Die letzte Stelle kann sein:
-# a (erstelle eine Transaktion Saldo -1)
-# k (gib den Saldo aus)
-
-# Spezialcodes:
-# Alle Salden anzeigen: 39b3bca191be67164317227fec3bed
 
 load_dotenv()
 api_url = os.environ.get("API_URL")
@@ -121,80 +109,6 @@ def person_existent(person_code):
     return False
 
 
-def erzeuge_qr_code(daten, text, qr_code_dateiname="qr_code.png"):
-    """
-    Erzeugt einen QR-Code mit zusätzlichem Infotext als PNG-Datei.
-
-    Args:
-        daten (str): Die Daten, die im QR-Code kodiert werden sollen.
-        text (str): Der Infotext, der unter dem QR-Code angezeigt wird.
-        qr_code_dateiname (str, optional): Der Name der zu speichernden PNG-Datei.
-                                           Defaults to "qr_code.png".
-    """
-
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
-    )
-    qr.add_data(daten)
-    qr.make(fit=True)
-
-    img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
-
-    breite, hoehe = img.size
-    text_farbe = "black"
-    hintergrund_farbe = "white"
-    schriftgroesse = 20
-    text_abstand_unten = 20
-
-    # Schriftart laden (stelle sicher, dass die Schriftartdatei existiert)
-    try:
-        schriftart = ImageFont.truetype(
-            "/usr/share/fonts/TTF/Hack-Bold.ttf", schriftgroesse)
-    except IOError:
-        schriftart = ImageFont.load_default()
-        print("Schriftart nicht gefunden. Verwende Standardschriftart.")
-
-    # Bild vergrößern und Infotext anfügen
-    zeichne = ImageDraw.Draw(img)
-    text_bbox = zeichne.textbbox((0, 0), text, font=schriftart)
-    text_hoehe = text_bbox[3] - text_bbox[1]
-
-    # Füge den Abstand zur neuen Höhe hinzu
-    neue_hoehe = hoehe + text_hoehe + text_abstand_unten
-    neues_bild = Image.new("RGBA", (breite, neue_hoehe), (0, 0, 0, 0))
-    neues_bild.paste(img, (0, 0))
-    zeichne_neu = ImageDraw.Draw(neues_bild)
-
-    hintergrund_y = hoehe
-    zeichne_neu.rectangle(
-        [(0, hintergrund_y), (breite, neue_hoehe)], fill=hintergrund_farbe)
-
-    text_breite = text_bbox[2] - text_bbox[0]
-    text_x = (breite - text_breite) // 2
-    text_y = neue_hoehe - text_abstand_unten - text_hoehe
-
-    zeichne_neu.text((text_x, text_y), text, fill=text_farbe,
-                     font=schriftart, anchor="lt")
-
-    # print(f"Breite {breite} - Höhe {hoehe} - neue Höhe {neue_hoehe}")
-    try:
-        neues_bild.save(qr_code_dateiname)
-        print(
-            f"QR-Code für '{daten}' wurde als '{qr_code_dateiname}' gespeichert.")
-    except FileNotFoundError:
-        print(
-            f"Fehler: Das angegebene Verzeichnis für '{qr_code_dateiname}' wurde nicht gefunden.")
-    except PermissionError:
-        print(
-            f"Fehler: Keine Berechtigung, um in '{qr_code_dateiname}' zu schreiben.")
-    except OSError as e:
-        print(
-            f"Ein unerwarteter Fehler beim Speichern des QR-Codes ist aufgetreten: {e}.")
-
-
 def exit_gracefully():
     """
     Räumt auf und beendet das Programm ordentlich.
@@ -213,17 +127,10 @@ if __name__ == "__main__":
         sys.exit(1)
 
     CSV_PERSONEN = "mitglieder.csv"
-    AUSGABE_ORDNER = "qr-codes/"
-
-    parser = argparse.ArgumentParser(description="Erzeuge QR-Codes entsprechend der Liste in der csv-Datei.")
-    parser.add_argument("--force-creation", action="store_true", help="Erzwingt die Erstellung der QR-Codes auch wenn die Person bereits in der Datenbank angelegt wurde.")
-
-    args = parser.parse_args()
 
     try:
         # Erstelle den Ausgabeordner, falls er nicht existiert
         healthcheck()
-        os.makedirs(AUSGABE_ORDNER + 'admin-codes', exist_ok=True)
         with open(CSV_PERSONEN, 'r', newline='', encoding='utf-8') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
@@ -235,36 +142,16 @@ if __name__ == "__main__":
                     # Überprüfe, ob es ein 10-stelliger Zahlencode ist
                     if len(code) == 10 and code.isdigit():
                         # Prüfe, ob die Person bereits angelegt wurde
-
-                        if not person_existent(code) or args.force_creation:
+                        if not person_existent(code):
                             # Speichere Person in Datenbank
                             person_einfuegen(code, nachname, vorname)
-                            # Aktion a - erstelle Transaktion Saldo -1
-                            os.makedirs(AUSGABE_ORDNER + nachname + " " + vorname, exist_ok=True)
-                            dateiname = os.path.join(
-                                AUSGABE_ORDNER, nachname + " " + vorname, "1x bezahlen.png")
-                            erzeuge_qr_code(
-                                code + "a", "1x bezahlen", dateiname)
-                            # Aktion k - Saldo anzeigen
-                            dateiname = os.path.join(
-                                AUSGABE_ORDNER, nachname + " " + vorname, "Saldo anzeigen.png")
-                            erzeuge_qr_code(
-                                code + "k", "Saldo anzeigen", dateiname)
                         else:
-                            print(f"Person mit Code {code} existiert bereits in der Datenbank.")
+                            print(f"Code {code} ({nachname} {vorname}) existiert bereits in der Datenbank.")
                     else:
                         print(
                             f"Zeile '{row}' in der CSV-Datei enthält keinen gültigen 10-stelligen Zahlencode.")
                 else:
                     print(f"Ungültige Zeile in der CSV-Datei: '{row}'.")
-
-        print("\nSondercodes speichern:")
-        dateiname = os.path.join(AUSGABE_ORDNER + 'admin-codes', "Alle Personen anzeigen.png")
-        erzeuge_qr_code("39b3bca191be67164317227fec3bed",
-                        "Alle Personen anzeigen", dateiname)
-
-        print(
-            f"\nQR-Codes wurden basierend auf den Codes in '{CSV_PERSONEN}' im Ordner '{AUSGABE_ORDNER}' gespeichert.")
 
     except FileNotFoundError:
         print(f"Fehler: Die CSV-Datei '{CSV_PERSONEN}' wurde nicht gefunden.")
