@@ -176,13 +176,13 @@ def its_a_usercode(usercode):
         abfrage = person_daten_lesen(code)
         if abfrage:
             nachname, vorname, saldo = abfrage
-            print(f"Der Saldo für {nachname} {vorname} ist jetzt {saldo}.")
+            print(f"Der Saldo für {vorname} {nachname} ist jetzt {saldo}.")
     elif (aktion) == "k":
         # Aktuelles Saldo anzeigen
         abfrage = person_daten_lesen(code)
         if abfrage:
             nachname, vorname, saldo = abfrage
-            print(f"Der Saldo für {nachname} {vorname} ist {saldo}.")
+            print(f"Der Saldo für {vorname} {nachname} ist {saldo}.")
     else:
         print("Mit dem Code stimmt etwas nicht.")
 
