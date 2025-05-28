@@ -19,9 +19,11 @@ Die Anwendungen und Skripte dienen unterschiedlichen Zwecken:
 * Eine funktionierende Instanz des [Feuerwehr-Versorgungs-Helfer Backends](https://github.com/magenbrot/Feuerwehr-Versorgungs-Helfer-API)
 * Eine `.env`-Datei im Stammverzeichnis dieses Projekts mit folgenden Umgebungsvariablen:
   * `API_URL`: Die vollständige URL zum API-Endpunkt des Backends (z.B. `http://localhost:5000`).
-  * `API_KEY`: Ein gültiger API-Schlüssel für die Authentifizierung am Backend.
-  * `MY_NAME` (optional, für `qrcode_leser.py` & `nfc_reader.py`): Ein Name für das Terminal (z.B. "Kasse Theke"), der als Beschreibung für Transaktionen verwendet wird.
+  * `API_KEY`: Ein gültiger API-Schlüssel für die Authentifizierung am Backend (wird über die Web-GUI angelegt)
   * `DEFAULT_PASSWORD` (für `personen_anlegen.py`): Ein Standardpasswort, das für neu angelegte Benutzer gesetzt wird.
+  * `TOKEN_DELAY`: Zeit in Sekunden, die der aufgelegte NFC-Token für weitere Transaktionen blockiert wird.
+  * `MY_NAME` (optional, für `qrcode_leser.py` & `nfc_reader.py`): Ein Name für das Terminal (z.B. "Kasse Theke"), der als Beschreibung für Transaktionen verwendet wird.
+  * `DISABLE_BUZZER`: Versucht den eingebauten Hardware-Signalton des NFC-Readers zu deaktivieren. True = deaktivieren, False = aktivieren.
 
 ## Installation 🔧
 
