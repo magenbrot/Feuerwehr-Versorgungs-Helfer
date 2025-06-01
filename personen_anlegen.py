@@ -12,7 +12,6 @@ api_url = os.environ.get("API_URL")
 api_key = os.environ.get("API_KEY")
 default_password = os.environ.get("DEFAULT_PASSWORD")
 
-
 def healthcheck():
     """
     Healthcheck gegen API ausführen.
@@ -35,7 +34,6 @@ def healthcheck():
     if get_response:
         return get_response.json()
     return None
-
 
 def person_einfuegen(person_code, person_nachname, person_vorname):
     """
@@ -79,7 +77,6 @@ def person_einfuegen(person_code, person_nachname, person_vorname):
         print(
             f"\nDatensatz für '{person_nachname} {person_vorname}' wurde hinzugefügt.")
 
-
 def person_existent(person_code):
     """
     Prüft, ob eine Person bereits in der Datenbank angelegt wurde.
@@ -108,7 +105,6 @@ def person_existent(person_code):
         return True
     return False
 
-
 def exit_gracefully():
     """
     Räumt auf und beendet das Programm ordentlich.
@@ -116,7 +112,6 @@ def exit_gracefully():
 
     print('Räume auf und beende das Programm ordentlich.')
     sys.exit(0)
-
 
 if __name__ == "__main__":
     if not api_url:

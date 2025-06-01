@@ -21,7 +21,6 @@ load_dotenv()
 api_url = os.environ.get("API_URL")
 api_key = os.environ.get("API_KEY")
 
-
 def healthcheck():
     """
     Healthcheck gegen API ausführen.
@@ -36,7 +35,6 @@ def healthcheck():
             print(f"Fehler beim Parsen der JSON-Antwort vom Healthcheck: {get_response.text}")
             return None
     return None
-
 
 def fetch_all_users_from_api():
     """
@@ -67,7 +65,6 @@ def fetch_all_users_from_api():
     else:
         print(f"Fehler beim Abrufen aller Benutzer von API ({get_url}): Keine Antwort erhalten.")
         return []
-
 
 def erzeuge_qr_code(daten, text, qr_code_dateiname="qr_code.png"):
     """
@@ -143,14 +140,12 @@ def erzeuge_qr_code(daten, text, qr_code_dateiname="qr_code.png"):
         print(
             f"Ein unerwarteter Fehler beim Speichern des QR-Codes ist aufgetreten: {e}.")
 
-
 def exit_gracefully():
     """
     Räumt auf und beendet das Programm ordentlich.
     """
     print('Räume auf und beende das Programm ordentlich.')
     sys.exit(0)
-
 
 if __name__ == "__main__":
     if not api_url:
@@ -241,7 +236,6 @@ if __name__ == "__main__":
             print(f"\nQR-Code-Generierung für Benutzer abgeschlossen. Ergebnisse im Ordner '{AUSGABE_ORDNER}'.")
         else:
             print(f"\nNur Spezial-QR-Codes wurden im Ordner '{os.path.join(AUSGABE_ORDNER, 'admin-codes')}' gespeichert/aktualisiert (keine Benutzerdaten von API).")
-
 
     except FileNotFoundError as e:
         print(f"Fehler: Ein benötigtes Verzeichnis konnte nicht gefunden oder erstellt werden: {e}")

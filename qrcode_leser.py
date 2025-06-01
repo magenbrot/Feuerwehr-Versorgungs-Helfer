@@ -21,9 +21,6 @@ import handle_requests as hr
 # Spezialcodes:
 # Das Saldo aller Benutzer anzeigen: 39b3bca191be67164317227fec3bed
 
-# debugging
-# import pdb; pdb.set_trace()
-
 load_dotenv()
 api_url=os.environ.get("API_URL")
 api_key=os.environ.get("API_KEY")
@@ -71,7 +68,6 @@ def json_daten_ausgeben(daten):
         print(
             "Fehler: Die Eingabe sollte ein gültiger JSON-String oder eine Liste/Dictionary sein.")
         return
-
 
 def qr_code_lesen(cap_video):
     """
@@ -130,7 +126,6 @@ def qr_code_lesen(cap_video):
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     break
 
-
 def werte_qr_code_aus(qr_code):
     """
     Führt Code entsprechend der Anweisung auf dem QR-Code aus.
@@ -149,10 +144,6 @@ def werte_qr_code_aus(qr_code):
         else:
             print(f"\nUnbekannter Code: {qr_code}")
 
-    # Leerzeile am Ende
-    # print()
-
-
 def its_a_usercode(usercode):
     """
     Wenn es sich um einen Benutzercode handelt wird entsprechend der Aktion verfahren.
@@ -162,16 +153,15 @@ def its_a_usercode(usercode):
     """
 
     print("")
-    aktion = usercode[-1] # letztes Zeichen im usercode bestimmt die auszuführende Aktion
     code = usercode[:10] # die ersten 10 Stellen des usercodes sind dem Benutzer zugeordnet
+    aktion = usercode[-1] # letztes Zeichen im usercode bestimmt die auszuführende Aktion
     beschreibung = my_name
 
-    # lade den Benutzer aus der DB
     print(f"Benutzer: {code} - Aktion: {aktion}. ", end='')
 
     if (aktion) == "a":
-        saldo_aenderung = "-1"
-        person_transaktion_erstellen(code, beschreibung, saldo_aenderung)
+        # lade den Benutzer aus der DB
+        person_transaktion_erstellen(code, beschreibung)
         print("Transaktion erfolgreich regisriert. ", end='')
         abfrage = person_daten_lesen(code)
         if abfrage:
@@ -185,7 +175,6 @@ def its_a_usercode(usercode):
             print(f"Der Saldo für {vorname} {nachname} ist {saldo}.")
     else:
         print("Mit dem Code stimmt etwas nicht.")
-
 
 def healthcheck():
     """
@@ -205,7 +194,6 @@ def healthcheck():
         return get_response.json()
     return None
 
-
 def daten_lesen_alle():
     """
     Daten aller Benutzer anzeigen.
@@ -223,7 +211,6 @@ def daten_lesen_alle():
     if get_response:
         return get_response.json()
     return None
-
 
 def person_daten_lesen(code):
     """
@@ -252,15 +239,13 @@ def person_daten_lesen(code):
         return (person_daten['nachname'], person_daten['vorname'], person_daten['saldo'])
     return None
 
-
-def person_transaktion_erstellen(code, beschreibung, saldo_aenderung):
+def person_transaktion_erstellen(code, beschreibung):
     """
     Transaktion für eine Person ausführen.
 
     Args:
         code (str): Der Code der Person, für die die Transaktion erstellt wird.
         beschreibung (str): Die Beschreibung der Buchung.
-        saldo_aenderung (str): Der Wert um den sich der Saldo ändern soll.
 
     Returns:
         requests.Response or None: Das Response-Objekt oder None bei einem Fehler.
@@ -273,14 +258,12 @@ def person_transaktion_erstellen(code, beschreibung, saldo_aenderung):
 
     put_daten = {
         'beschreibung': beschreibung,
-        'saldo_aenderung': saldo_aenderung
     }
 
     put_response = hr.put_request(put_url, put_headers, put_daten)
     if put_response:
         return put_response
     return None
-
 
 def system_beep_ascii():
     """
@@ -289,7 +272,6 @@ def system_beep_ascii():
 
     print('\a', end='', flush=True)
     time.sleep(0.1)  # kurze Pause, um den Ton hörbarer zu machen
-
 
 def exit_gracefully(cap_video):
     """
@@ -303,7 +285,6 @@ def exit_gracefully(cap_video):
     cap_video.release()
     cv2.destroyAllWindows()
     sys.exit(0)
-
 
 if __name__ == "__main__":
     if not api_url:

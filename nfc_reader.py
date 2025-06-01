@@ -23,7 +23,6 @@ token_delay = int(os.environ.get("TOKEN_DELAY"))
 my_name = os.environ.get("MY_NAME")
 disable_buzzer = os.getenv('DISABLE_BUZZER', 'False') == 'True'
 
-
 def healthcheck():
     """
     Healthcheck gegen API ausführen.
@@ -41,7 +40,6 @@ def healthcheck():
     if get_response:
         return get_response.json()
     return None
-
 
 def person_transaktion_erstellen(token_hex):
     """
@@ -89,7 +87,6 @@ def person_transaktion_erstellen(token_hex):
         print(f"Allgemeiner Fehler: {e}")
         return None
 
-
 def lese_nfc_token_uid(connection):
     """
     Liest die UID von dem Token.
@@ -111,7 +108,6 @@ def lese_nfc_token_uid(connection):
         print(f"Fehler beim Lesen des Tokens: {e}")
         return None
 
-
 def lese_nfc_token_ats(connection):
     """
     Liest die ATS von dem Token.
@@ -132,7 +128,6 @@ def lese_nfc_token_ats(connection):
     except Exception as e:  # pylint: disable=W0718
         print(f"Fehler beim Lesen des Tokens: {e}")
         return None
-
 
 def verarbeite_token(token_hex, last_token_time):
     """
@@ -157,7 +152,6 @@ def verarbeite_token(token_hex, last_token_time):
         return None
     print(f"Token {token_hex} wurde kürzlich verarbeitet. Ignoriere.")
     return last_token_time
-
 
 def schalte_buzzer_ab(nfc_reader):
     """
@@ -202,7 +196,6 @@ def schalte_buzzer_ab(nfc_reader):
                 connection.disconnect()
             except Exception:  # pylint: disable=W0718 # nosec B110
                 pass  # Fehler beim Trennen sind nicht kritisch
-
 
 def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
     """
@@ -275,7 +268,6 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
         print("\nNFC-Reader wird beendet.")
     finally:
         print("NFC-Reader beendet.")
-
 
 if __name__ == "__main__":
     if not api_url:
