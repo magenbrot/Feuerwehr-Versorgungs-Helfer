@@ -251,7 +251,7 @@ def person_transaktion_erstellen(code, beschreibung):
         requests.Response or None: Das Response-Objekt oder None bei einem Fehler.
     """
 
-    put_url = f"{api_url}/person/{code}"
+    put_url = f"{api_url}/person/{code}/transaktion"
     put_headers = {
         'X-API-Key': api_key
     }
