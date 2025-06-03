@@ -9,6 +9,7 @@ import cv2
 # import numpy as np # nur für optionale Visualisierung
 from pyzbar.pyzbar import decode
 import handle_requests as hr
+import sound_ausgabe
 
 # Format der QR-Codes
 # Der Benutzercode hat 11 Stellen.
@@ -157,24 +158,28 @@ def its_a_usercode(usercode):
     aktion = usercode[-1] # letztes Zeichen im usercode bestimmt die auszuführende Aktion
     beschreibung = my_name
 
-    print(f"Benutzer: {code} - Aktion: {aktion}. ", end='')
+    print(f"Benutzer: {code} - Aktion: {aktion}. ")
 
     if (aktion) == "a":
         # lade den Benutzer aus der DB
-        person_transaktion_erstellen(code, beschreibung)
-        print("Transaktion erfolgreich regisriert. ", end='')
-        abfrage = person_daten_lesen(code)
-        if abfrage:
-            nachname, vorname, saldo = abfrage
-            print(f"Der Saldo für {vorname} {nachname} ist jetzt {saldo}.")
-    elif (aktion) == "k":
+        response = person_transaktion_erstellen(code, beschreibung)
+        if response.json().get('action') == 'block':
+            sound_ausgabe.sprich_text("wah-wah", f"{response.json()['message']}", sprache="de")
+            return
+        sound_ausgabe.sprich_text("tagesschau", f"{response.json()['message']}", sprache="de")
+        return
+    if (aktion) == "k":
         # Aktuelles Saldo anzeigen
         abfrage = person_daten_lesen(code)
         if abfrage:
             nachname, vorname, saldo = abfrage
-            print(f"Der Saldo für {vorname} {nachname} ist {saldo}.")
+            print(f"Der Saldo für {vorname} {nachname} ist {saldo} €.")
+            sound_ausgabe.sprich_text("tagesschau", f"Hallo {vorname}! Dein Kontostand beträgt momentan {saldo} €.", sprache="de")
+            return
     else:
         print("Mit dem Code stimmt etwas nicht.")
+        sound_ausgabe.sprich_text("fail", "Mit deinem QR-Code stimmt etwas nicht. Bitte wende dich an deinen Administrator.", sprache="de")
+        return
 
 def healthcheck():
     """

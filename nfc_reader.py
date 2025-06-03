@@ -15,6 +15,7 @@ from smartcard.System import readers
 from smartcard.util import toHexString
 from dotenv import load_dotenv
 import handle_requests as hr
+import sound_ausgabe
 
 load_dotenv()
 api_url = os.environ.get("API_URL")
@@ -71,20 +72,24 @@ def person_transaktion_erstellen(token_hex):
         print(f"NFC-Token {token_hex} ({token_hex_ohne_leerzeichen}) erkannt! Sende an API...")
         response = hr.put_request(put_url, put_headers, put_daten)
         response.raise_for_status()
-        print(f"{response.json()['message']}")
-        #print(f"API-Antwort: {response.json()}")
+
+        # TODO hier fehlt noch die Behandlung eines Fehler! Aktuell wird der fail-sound nicht ausgegeben.
+        sound_ausgabe.sprich_text("tagesschau", f"{response.json()['message']}", sprache="de")
         return True
     except hr.requests.exceptions.RequestException as e:
         if response is not None and response.status_code == 404:
             print(f"Benutzer mit Token {token_hex} nicht gefunden (404).")
+            sound_ausgabe.sprich_text("fail", "Benutzer nicht gefunden, bitte wende dich an deinen Administrator.", sprache="de")
             return False  # API-Anfrage fehlgeschlagen, Benutzer nicht gefunden
         print(f"Fehler beim Senden des Tokens an die API: {e}")
+        sound_ausgabe.sprich_text("fail", "API-Fehler, bitte wende dich an deinen Administrator.", sprache="de")
         return False  # Andere API-Fehler
     except binascii.Error:
         print(f"Fehler: Ungültiger Hexadezimalstring: {token_hex}")
         return False
     except Exception as e:  # pylint: disable=W0718
         print(f"Allgemeiner Fehler: {e}")
+        sound_ausgabe.sprich_text("fail", "Es kam zu einem Fehler, bitte wende dich an deinen Administrator.", sprache="de")
         return None
 
 def lese_nfc_token_uid(connection):
@@ -177,7 +182,6 @@ def schalte_buzzer_ab(nfc_reader):
             # Laut API Doku (Seite 9/Anhang A) bedeuten andere SWs Fehler
             if sw1 == 0x63 and sw2 == 0x00:
                 print("Laut API-Dokumentation: Operation fehlgeschlagen (Status Code 63 00h).")
-            # Hier könnten Sie weitere spezifische Fehlercodes aus Appendix A prüfen
     except CardConnectionException as e:
         error_message = str(e)
         if "No smart card inserted" in error_message:
