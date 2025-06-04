@@ -29,10 +29,15 @@ Die Anwendungen und Skripte dienen unterschiedlichen Zwecken:
 
 Umgebung vorbereiten (root):
 
+* `pcscd` `pcsc-tools` `libpcsclite-dev`: SmartCard Tools für Linux, notwendig für den USB NFC-Reader und das Python-Modul `pyscard`
+* `libgl1`: Für das Python-Modul `opencv-python`
+* `libzbar0t64`: Für das Python-Modul `pyzbar`
+
 ```bash
 apt update
-apt install python3-dev libpcsclite-dev libgl1 libzbar0t64
+apt install libpcsclite-dev libgl1 libzbar0t64 python3-dev
 ```
+
 wobei `libpcsclite-dev` für das Smartcard-Modul `pyscard`, `libgl1` für das `opencv-python` und `libzbar0t64` für `pyzbar` notwendig sind.
 
 Umgebung vorbereiten (user):
