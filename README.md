@@ -27,8 +27,15 @@ Die Anwendungen und Skripte dienen unterschiedlichen Zwecken:
 
 ## Installation 🔧
 
-Umgebung vorbereiten:
+Umgebung vorbereiten (root):
 
+```bash
+apt update
+apt install python3-dev libpcsclite-dev libgl1 libzbar0t64
+```
+wobei `libpcsclite-dev` für das Smartcard-Modul `pyscard`, `libgl1` für das `opencv-python` und `libzbar0t64` für `pyzbar` notwendig sind.
+
+Umgebung vorbereiten (user):
 ```bash
 git clone https://github.com/magenbrot/Feuerwehr-Versorgungs-Helfer.git
 python3 -m venv venv
@@ -43,11 +50,7 @@ Dieses Skript startet eine Webcam, erkennt QR-Codes und führt basierend auf dem
 #### Spezifische Einrichtung für QR-Code Leser
 
 * Eine angeschlossene Webcam.
-* Zusätzliche Python-Bibliotheken installieren:
-
-    ```bash
-    pip install opencv-python pyzbar python-dotenv requests
-    ```
+* Benutzer sollte entsprechende Systemrechte haben
 
 #### Funktionalität des QR-Code Lesers
 
@@ -74,12 +77,7 @@ Dieses Skript verwendet einen ACR122U NFC-Kartenleser, um NFC-Chips auszulesen u
 #### Spezifische Einrichtung für NFC-Leser
 
 * Ein angeschlossener ACR122U NFC-Kartenleser mit korrekt installierten Treibern.
-* Zusätzliche Python-Bibliotheken installieren:
-
-    ```bash
-    pip install pyscard python-dotenv requests
-    ```
-
+* Benutzer sollte entsprechende Systemrechte haben
 * Umgebungsvariable `TOKEN_DELAY` in der `.env`-Datei setzen (Verzögerung in Sekunden zwischen der Verarbeitung desselben Tokens).
 * Umgebungsvariable `DISABLE_BUZZER` (optional, `True` oder `False`) in der `.env`-Datei, um den Piepton des Lesers zu steuern.
 
