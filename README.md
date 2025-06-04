@@ -50,7 +50,7 @@ Dieses Skript startet eine Webcam, erkennt QR-Codes und führt basierend auf dem
 #### Spezifische Einrichtung für QR-Code Leser
 
 * Eine angeschlossene Webcam.
-* Benutzer sollte entsprechende Systemrechte haben
+* Benutzer sollte entsprechende Systemrechte haben (Gruppe `video`)
 
 #### Funktionalität des QR-Code Lesers
 
