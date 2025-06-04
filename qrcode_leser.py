@@ -278,7 +278,7 @@ def system_beep_ascii():
     print('\a', end='', flush=True)
     time.sleep(0.1)  # kurze Pause, um den Ton hörbarer zu machen
 
-def exit_gracefully(cap_video):
+def exit_gracefully(cap_video=None):
     """
     Räume auf und beende das Programm ordentlich.
 
@@ -287,8 +287,9 @@ def exit_gracefully(cap_video):
     """
 
     print('Räume auf und beende das Programm ordentlich.')
-    cap_video.release()
-    cv2.destroyAllWindows()
+    if cap_video:
+        cap_video.release()
+        cv2.destroyAllWindows()
     sys.exit(0)
 
 if __name__ == "__main__":
@@ -305,7 +306,7 @@ if __name__ == "__main__":
             print("Healthcheck fehlgeschlagen. Beende Skript.")
             sys.exit(1)
 
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(-1)
         if not cap.isOpened():
             raise IOError("Kamera konnte nicht geöffnet werden.")
         print("\nBereitschaft.\n")
@@ -316,7 +317,11 @@ if __name__ == "__main__":
         print(f"Fehler beim Öffnen der Kamera: {e}.")
     except KeyboardInterrupt:
         pass
+    except Exception as e:  # pylint: disable=W0718
+        print(f"Ein unerwarteter Fehler im Hauptteil des Skripts ist aufgetreten: {e}")
+        sys.exit(1)
     finally:
         if 'cap' in locals() and cap.isOpened():
             cap.release()
-        exit_gracefully(cap)
+            exit_gracefully(cap)
+        exit_gracefully()

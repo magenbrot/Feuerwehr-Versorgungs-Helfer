@@ -102,6 +102,7 @@ def lese_nfc_token_uid(connection):
     Returns:
         str: Die UID als Hex-String, oder None im Fehlerfall.
     """
+
     try:
         get_uid = [0xFF, 0xCA, 0x00, 0x00, 0x00]
         response, sw1, sw2 = connection.transmit(get_uid)
@@ -123,6 +124,7 @@ def lese_nfc_token_ats(connection):
     Returns:
         str: Die ATS als Hex-String, oder None im Fehlerfall.
     """
+
     try:
         get_ats = [0xFF, 0xCA, 0x01, 0x00, 0x00]
         response, sw1, sw2 = connection.transmit(get_ats)
@@ -218,6 +220,7 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
     Args:
         nfc_reader (smartcard.pcsc.PCSCReader): Das Reader-Objekt, das für die NFC-Kommunikation verwendet wird.
     """
+
     print(f"\nStarte kontinuierliche NFC-Lesung auf Reader: {nfc_reader}")
     last_token_time = None  # Speichert die letzte Verarbeitungszeit des Tokens
 
