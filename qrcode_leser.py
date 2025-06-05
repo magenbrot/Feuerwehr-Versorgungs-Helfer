@@ -26,7 +26,7 @@ load_dotenv()
 api_url=os.environ.get("API_URL")
 api_key=os.environ.get("API_KEY")
 my_name = os.environ.get("MY_NAME")
-camera_index = os.environ.get("CAMERA_INDEX")
+camera_index = int(os.environ.get("CAMERA_INDEX"))
 
 def json_daten_ausgeben(daten):
     """
