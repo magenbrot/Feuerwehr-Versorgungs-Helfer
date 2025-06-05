@@ -26,6 +26,7 @@ load_dotenv()
 api_url=os.environ.get("API_URL")
 api_key=os.environ.get("API_KEY")
 my_name = os.environ.get("MY_NAME")
+camera_index = os.environ.get("CAMERA_INDEX")
 
 def json_daten_ausgeben(daten):
     """
@@ -306,7 +307,7 @@ if __name__ == "__main__":
             print("Healthcheck fehlgeschlagen. Beende Skript.")
             sys.exit(1)
 
-        cap = cv2.VideoCapture(-1)
+        cap = cv2.VideoCapture(camera_index)
         if not cap.isOpened():
             raise IOError("Kamera konnte nicht geöffnet werden.")
         print("\nBereitschaft.\n")
