@@ -9,6 +9,7 @@ import cv2
 # import numpy as np # nur für optionale Visualisierung
 from pyzbar.pyzbar import decode
 import handle_requests as hr
+import sound_ausgabe
 
 # Format der QR-Codes
 # Der Benutzercode hat 11 Stellen.
@@ -157,24 +158,28 @@ def its_a_usercode(usercode):
     aktion = usercode[-1] # letztes Zeichen im usercode bestimmt die auszuführende Aktion
     beschreibung = my_name
 
-    print(f"Benutzer: {code} - Aktion: {aktion}. ", end='')
+    print(f"Benutzer: {code} - Aktion: {aktion}. ")
 
     if (aktion) == "a":
         # lade den Benutzer aus der DB
-        person_transaktion_erstellen(code, beschreibung)
-        print("Transaktion erfolgreich regisriert. ", end='')
-        abfrage = person_daten_lesen(code)
-        if abfrage:
-            nachname, vorname, saldo = abfrage
-            print(f"Der Saldo für {vorname} {nachname} ist jetzt {saldo}.")
-    elif (aktion) == "k":
+        response = person_transaktion_erstellen(code, beschreibung)
+        if response.json().get('action') == 'block':
+            sound_ausgabe.sprich_text("wah-wah", f"{response.json()['message']}", sprache="de")
+            return
+        sound_ausgabe.sprich_text("tagesschau", f"{response.json()['message']}", sprache="de")
+        return
+    if (aktion) == "k":
         # Aktuelles Saldo anzeigen
         abfrage = person_daten_lesen(code)
         if abfrage:
             nachname, vorname, saldo = abfrage
-            print(f"Der Saldo für {vorname} {nachname} ist {saldo}.")
+            print(f"Der Saldo für {vorname} {nachname} ist {saldo} €.")
+            sound_ausgabe.sprich_text("tagesschau", f"Hallo {vorname}! Dein Kontostand beträgt momentan {saldo} €.", sprache="de")
+            return
     else:
         print("Mit dem Code stimmt etwas nicht.")
+        sound_ausgabe.sprich_text("fail", "Mit deinem QR-Code stimmt etwas nicht. Bitte wende dich an deinen Administrator.", sprache="de")
+        return
 
 def healthcheck():
     """
@@ -273,7 +278,7 @@ def system_beep_ascii():
     print('\a', end='', flush=True)
     time.sleep(0.1)  # kurze Pause, um den Ton hörbarer zu machen
 
-def exit_gracefully(cap_video):
+def exit_gracefully(cap_video=None):
     """
     Räume auf und beende das Programm ordentlich.
 
@@ -282,8 +287,9 @@ def exit_gracefully(cap_video):
     """
 
     print('Räume auf und beende das Programm ordentlich.')
-    cap_video.release()
-    cv2.destroyAllWindows()
+    if cap_video:
+        cap_video.release()
+        cv2.destroyAllWindows()
     sys.exit(0)
 
 if __name__ == "__main__":
@@ -300,7 +306,7 @@ if __name__ == "__main__":
             print("Healthcheck fehlgeschlagen. Beende Skript.")
             sys.exit(1)
 
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(-1)
         if not cap.isOpened():
             raise IOError("Kamera konnte nicht geöffnet werden.")
         print("\nBereitschaft.\n")
@@ -311,7 +317,11 @@ if __name__ == "__main__":
         print(f"Fehler beim Öffnen der Kamera: {e}.")
     except KeyboardInterrupt:
         pass
+    except Exception as e:  # pylint: disable=W0718
+        print(f"Ein unerwarteter Fehler im Hauptteil des Skripts ist aufgetreten: {e}")
+        sys.exit(1)
     finally:
         if 'cap' in locals() and cap.isOpened():
             cap.release()
-        exit_gracefully(cap)
+            exit_gracefully(cap)
+        exit_gracefully()
