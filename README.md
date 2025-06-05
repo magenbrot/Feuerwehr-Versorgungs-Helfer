@@ -47,6 +47,23 @@ EOF
 
 Danach den initramfs aktualisieren: `sudo update-initramfs -u` (bei Debian/Ubuntu) oder `sudo dracut -f` (bei Fedora/CentOS) und neu starten (alternativ die Module mit `modprobe -r` entladen).
 
+Jetzt muss ggf. noch eine Regel für das Policy Kit hinzugefügt werden (z.B. bei Ubuntu), damit der Benutzer auch auf den NFC-Reader zugreifen darf.
+
+```bash
+cat << EOF > /etc/polkit-1/rules.d/90-pcscd-access.rules
+// Allow any active user in "plugdev" group to access pcscd and cards
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.debian.pcsc-lite.access_pcsc" || // Zugriff auf den Daemon
+        action.id == "org.debian.pcsc-lite.access_card") {  // Zugriff auf die Karte
+        if (subject.isInGroup("plugdev")) {
+            return polkit.Result.YES;
+        }
+    }
+});
+EOF
+systemctl restart polkit.service
+```
+
 Jetzt können die Tools und weiteren Voraussetzungen installiert werden:
 
 ```bash
