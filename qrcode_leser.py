@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """Liest QR-Codes über Webcam und agiert auf enhaltene Codes"""
 
 import sys
