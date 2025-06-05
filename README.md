@@ -33,14 +33,52 @@ Umgebung vorbereiten (root):
 * `libgl1`: Für das Python-Modul `opencv-python`
 * `libzbar0t64`: Für das Python-Modul `pyzbar`
 
+Für NFC-Kartenleser mit dem ACR122U Chipsatz ist es notwendig die Kernelmodule zu blockeren, die eventuell automatisch geladen werden und den korrekten Zugriff auf der Reader verhindern.
+
+Dazu müssen die Module in der Kernel Blacklist hinterlegt werden:
+
 ```bash
-apt update
-apt install libpcsclite-dev libgl1 libzbar0t64 python3-dev
+cat << EOF > /etc/modprobe.d/blacklist-nfc.conf
+blacklist pn533
+blacklist nfc
+blacklist pn533_usb
+EOF
 ```
 
-wobei `libpcsclite-dev` für das Smartcard-Modul `pyscard`, `libgl1` für das `opencv-python` und `libzbar0t64` für `pyzbar` notwendig sind.
+Danach den initramfs aktualisieren: `sudo update-initramfs -u` (bei Debian/Ubuntu) oder `sudo dracut -f` (bei Fedora/CentOS) und neu starten (alternativ die Module mit `modprobe -r` entladen).
+
+Jetzt können die Tools und weiteren Voraussetzungen installiert werden:
+
+```bash
+apt update
+apt install pcscd pcsc-tools libpcsclite-dev libgl1 libzbar0t64 python3-dev
+```
+
+Testen des NFC-Readers über das Tool `pcsc_scan`. Es sollten dann die passenden Events ausgegeben werden:
+
+```bash
+root@rock64 ~# pcsc_scan
+PC/SC device scanner
+V 1.7.1 (c) 2001-2022, Ludovic Rousseau <ludovic.rousseau@free.fr>
+Using reader plug'n play mechanism
+Scanning present readers...
+0: ACS ACR122U PICC Interface 00 00
+ 
+Thu Jun  5 11:13:14 2025
+ Reader 0: ACS ACR122U PICC Interface 00 00
+  Event number: 0
+  Card state: Card removed, 
+   
+Thu Jun  5 11:13:20 2025
+ Reader 0: ACS ACR122U PICC Interface 00 00
+  Event number: 1
+  Card state: Card inserted, 
+  ATR: 3B 8F 80 01 80 4F 0C A0 00 00 03 06 03 00 01 00 00 00 00 6A
+[...]
+```
 
 Umgebung vorbereiten (user):
+
 ```bash
 git clone https://github.com/magenbrot/Feuerwehr-Versorgungs-Helfer.git
 python3 -m venv venv
@@ -82,7 +120,7 @@ Dieses Skript verwendet einen ACR122U NFC-Kartenleser, um NFC-Chips auszulesen u
 #### Spezifische Einrichtung für NFC-Leser
 
 * Ein angeschlossener ACR122U NFC-Kartenleser mit korrekt installierten Treibern.
-* Benutzer sollte entsprechende Systemrechte haben
+* Benutzer sollte entsprechende Systemrechte haben, bzw. das System vorbereitet haben (siehe oben)
 * Umgebungsvariable `TOKEN_DELAY` in der `.env`-Datei setzen (Verzögerung in Sekunden zwischen der Verarbeitung desselben Tokens).
 * Umgebungsvariable `DISABLE_BUZZER` (optional, `True` oder `False`) in der `.env`-Datei, um den Piepton des Lesers zu steuern.
 
