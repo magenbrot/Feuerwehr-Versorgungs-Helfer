@@ -169,7 +169,7 @@ def its_a_usercode(usercode):
         if response.json().get('action') == 'block':
             sound_ausgabe.sprich_text("wah-wah", f"{response.json()['message']}", sprache="de")
             return
-        sound_ausgabe.sprich_text("tagesschau", f"{response.json()['message']}", sprache="de")
+        sound_ausgabe.sprich_text("plopp1", f"{response.json()['message']}", sprache="de")
         return
     if (aktion) == "k":
         # Aktuelles Saldo anzeigen

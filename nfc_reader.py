@@ -75,6 +75,7 @@ def person_transaktion_erstellen(token_hex):
         response = hr.put_request(put_url, put_headers, put_daten)
         response.raise_for_status()
 
+        # hier fehlt noch die Unterscheidung ob Guthaben da ist oder nicht
         sound_ausgabe.sprich_text("tagesschau", f"{response.json()['message']}", sprache="de")
         return True
     except hr.requests.exceptions.RequestException as e:
