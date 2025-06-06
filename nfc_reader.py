@@ -75,8 +75,10 @@ def person_transaktion_erstellen(token_hex):
         response = hr.put_request(put_url, put_headers, put_daten)
         response.raise_for_status()
 
-        # hier fehlt noch die Unterscheidung ob Guthaben da ist oder nicht
-        sound_ausgabe.sprich_text("tagesschau", f"{response.json()['message']}", sprache="de")
+        if response.json().get('action') == 'block':
+            sound_ausgabe.sprich_text("wah-wah", f"{response.json()['message']}", sprache="de")
+            return True
+        sound_ausgabe.sprich_text("plopp1", f"{response.json()['message']}", sprache="de")
         return True
     except hr.requests.exceptions.RequestException as e:
         if response is not None and response.status_code == 404:
