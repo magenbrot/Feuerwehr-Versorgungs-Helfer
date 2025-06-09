@@ -29,59 +29,52 @@ def _initialize_mixer():
             logging.error("Failed to initialize pygame mixer: %s", e)
             raise  # Re-raise the exception to be caught by the main function
 
-def play_sound_effect(sound_datei_name):
+def play_sound_effect(sound_datei_name: str | None) -> bool:
     """
-    Plays a sound effect if specified and found.
+    Spielt einen Soundeffekt ab, falls angegeben und gefunden.
+
     Args:
-        sound_datei_name (str): The name of the sound file (e.g., "alarm") or full filename (e.g., "alarm.mp3").
+        sound_datei_name (str | None): Der Name der Sounddatei (z. B. "alarm")
+                                       oder None.
+
     Returns:
-        bool: True if sound played or no sound was specified, False if sound file not found.
+        bool: True, wenn kein Sound angefordert oder der Sound erfolgreich
+              abgespielt wurde. False, bei einem Fehler oder wenn die Datei
+              nicht gefunden wurde.
     """
 
     if not sound_datei_name:
-        return True # No sound effect requested
+        return True
 
     if not pygame.mixer.get_init():
         try:
             _initialize_mixer()
-        except pygame.error: # pylint: disable=no-member
-             # If mixer fails to init, we can't play sounds. Log and exit or handle.
-            logging.error("Cannot proceed without pygame mixer.")
-            return # Or raise an error
+        except pygame.error:  # pylint: disable=no-member
+            logging.error("Pygame-Mixer konnte nicht initialisiert werden.")
+            return False
 
     try:
         base_path = "static/sounds/"
-        # Construct the full path, ensuring .mp3 extension
-        if not sound_datei_name.endswith(".mp3"):
-            full_sound_path = os.path.join(base_path, sound_datei_name + ".mp3")
-        else:
-            full_sound_path = os.path.join(base_path, sound_datei_name)
+        sound_file = f"{sound_datei_name}.mp3" if not sound_datei_name.endswith(".mp3") else sound_datei_name
+        full_sound_path = os.path.join(base_path, sound_file)
 
-        if os.path.exists(full_sound_path):
-            try:
-                effekt = pygame.mixer.Sound(full_sound_path)
-                logging.info("Playing sound effect: %s", full_sound_path)
-                effekt.play()
-                # Wait for the sound effect to finish before proceeding
-                time.sleep(effekt.get_length())
-                return True
-            except pygame.error as e: # pylint: disable=no-member
-                logging.error("Pygame error playing sound effect '%s': %s", full_sound_path, e)
-                return False # Indicate failure to play sound
-        else:
-            logging.warning("Sound effect file not found: %s", full_sound_path)
-            # Optionally, raise FileNotFoundError if this should halt execution
-            # raise FileNotFoundError(f"Die Sounddatei '{full_sound_path}' wurde nicht gefunden.")
-            return False # Indicate sound file not found
+        if not os.path.exists(full_sound_path):
+            logging.warning("Sound-Datei nicht gefunden: %s", full_sound_path)
+            return False
 
-    except pygame.error as e: # pylint: disable=no-member
-        # This will catch errors from mixer.init, music.load, music.play
-        logging.error("Pygame Error during TTS playback: %s", e)
+        effekt = pygame.mixer.Sound(full_sound_path)
+        logging.info("Spiele Soundeffekt ab: %s", full_sound_path)
+        effekt.play()
+        time.sleep(effekt.get_length())  # Warten, bis der Sound zu Ende ist
+        return True
+
+    except pygame.error as e:  # pylint: disable=no-member
+        logging.error("Pygame-Fehler beim Abspielen des Sounds '%s': %s", full_sound_path, e)
+        return False  # Fehler explizit zurückgeben
+
     except Exception as e:  # pylint: disable=W0718
-        logging.error("An unexpected error occurred in sprich_text: %s", e, exc_info=True)
-    finally:
-        # Cleanup resources regardless of success or failure
-        _cleanup_tts_resources()
+        logging.error("Unerwarteter Fehler in play_sound_effect: %s", e, exc_info=True)
+        return False  # Fehler explizit zurückgeben
 
 def _cleanup_tts_resources(filename: str | None = None) -> None:
     """
@@ -143,7 +136,7 @@ def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slo
             except pygame.error: # pylint: disable=no-member
                 # If mixer fails to init, we can't play sounds. Log and exit or handle.
                 logging.error("Cannot proceed without pygame mixer.")
-                return # Or raise an error
+                return  # Or raise an error
 
         # Play the generated speech
         pygame.mixer.music.load(temp_tts_filename)
