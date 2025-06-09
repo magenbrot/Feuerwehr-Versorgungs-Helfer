@@ -155,6 +155,8 @@ def verarbeite_token(token_hex, last_token_time):
     jetzt = time.time()
 
     if last_token_time is None or jetzt - last_token_time >= token_delay:
+        # beep sound wenn Token gescannt wurde
+        sound_ausgabe.play_sound_effect("beep2.mp3")
         transaktion_erfolgreich = person_transaktion_erstellen(token_hex)
         #saldo_ausgeben_erfolgreich = person_daten_lesen(token_hex)
         #if transaktion_erfolgreich and saldo_ausgeben_erfolgreich:
