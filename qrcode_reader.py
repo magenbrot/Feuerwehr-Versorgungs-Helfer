@@ -163,6 +163,9 @@ def its_a_usercode(usercode):
 
     print(f"Benutzer: {code} - Aktion: {aktion}. ")
 
+    # beep sound wenn Token gescannt wurde
+    sound_ausgabe.play_sound_effect("beep2.mp3")
+
     if (aktion) == "a":
         # lade den Benutzer aus der DB
         response = person_transaktion_erstellen(code, beschreibung)
