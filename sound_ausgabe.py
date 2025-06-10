@@ -163,6 +163,7 @@ def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slo
         _cleanup_tts_resources(temp_tts_filename)
 
 if __name__ == "__main__":
-    sprich_text("alarm", "Du hast kein Guthaben mehr, stell das Getränk zurück in den Schrank!", sprache="de")
-    sprich_text("badumtss", "Dein Guthaben ist jetzt auf 0 €!", sprache="de")
-    sprich_text("mario-victory", "Hat geklappt, lass es dir schmecken!", sprache="de")
+    play_sound_effect("kasse3.mp3")
+    # sprich_text("alarm", "Du hast kein Guthaben mehr, stell das Getränk zurück in den Schrank!", sprache="de")
+    # sprich_text("badumtss", "Dein Guthaben ist jetzt auf 0 €!", sprache="de")
+    # sprich_text("mario-victory", "Hat geklappt, lass es dir schmecken!", sprache="de")
