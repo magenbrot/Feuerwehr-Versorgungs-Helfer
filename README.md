@@ -2,7 +2,7 @@
 
 ## Übersicht ℹ️
 
-Dieses Repository enthält Client-Anwendungen (Terminals) und Verwaltungs-Skripte für das digitale Strichlisten-System "Feuerwehr-Versorgungs-Helfer". Diese Python-Skripte ermöglichen es Benutzern, über QR-Codes oder NFC-Tokens "Striche zu machen" (d.h. Guthaben abzubuchen) bzw. Administratoren, Benutzer anzulegen und QR-Codes zu generieren. Alle Komponenten kommunizieren mit dem [separaten Backend-System](https://github.com/magenbrot/Feuerwehr-Versorgungs-Helfer-API).
+Dieses Repository enthält Client-Anwendungen (Terminals) für das digitale Strichlisten-System "Feuerwehr-Versorgungs-Helfer". Diese Python-Skripte ermöglichen es Benutzern, über QR-Codes oder NFC-Tokens "Striche zu machen" (d.h. Guthaben abzubuchen). Alle Komponenten kommunizieren mit dem [separaten Backend-System](https://github.com/magenbrot/Feuerwehr-Versorgungs-Helfer-API).
 
 ## Funktionsweise 🎯
 
@@ -10,8 +10,6 @@ Die Anwendungen und Skripte dienen unterschiedlichen Zwecken:
 
 * **QR-Code Leser (`qrcode_leser.py`)**: Verwendet eine angeschlossene Webcam, um spezielle QR-Codes zu erkennen und Aktionen auszulösen.
 * **NFC-Leser (`nfc_reader.py`)**: Verwendet einen ACR122U NFC-Kartenleser, um NFC-Tokens (Karten, Anhänger, Smartphones) zu erkennen und Transaktionen zu starten. Der Code ist eventuell auch mit anderen USB-NFC-Readern kompatibel.
-* **Personen Anlegen (`personen_anlegen.py`)**: Ein Skript für Administratoren, um neue Benutzer aus einer CSV-Datei in der Datenbank anzulegen.
-* **QR-Code Generierung (`qrcodes_generieren.py`)** Generiert QR-Codes für die Benutzer in der Datenbank.
 
 ## Allgemeine Voraussetzungen 🛠️
 
@@ -20,7 +18,6 @@ Die Anwendungen und Skripte dienen unterschiedlichen Zwecken:
 * Eine `.env`-Datei im Stammverzeichnis dieses Projekts mit folgenden Umgebungsvariablen:
   * `API_URL`: Die vollständige URL zum API-Endpunkt des Backends (z.B. `http://localhost:5000`).
   * `API_KEY`: Ein gültiger API-Schlüssel für die Authentifizierung am Backend (wird über die Web-GUI angelegt)
-  * `DEFAULT_PASSWORD` (für `personen_anlegen.py`): Ein Standardpasswort, das für neu angelegte Benutzer gesetzt wird.
   * `TOKEN_DELAY`: Zeit in Sekunden, die der aufgelegte NFC-Token für weitere Transaktionen blockiert wird.
   * `MY_NAME` (optional, für `qrcode_leser.py` & `nfc_reader.py`): Ein Name für das Terminal (z.B. "Kasse Theke"), der als Beschreibung für Transaktionen verwendet wird.
   * `DISABLE_BUZZER`: Versucht den eingebauten Hardware-Signalton des NFC-Readers zu deaktivieren. True = deaktivieren, False = aktivieren.
@@ -80,16 +77,16 @@ V 1.7.1 (c) 2001-2022, Ludovic Rousseau <ludovic.rousseau@free.fr>
 Using reader plug'n play mechanism
 Scanning present readers...
 0: ACS ACR122U PICC Interface 00 00
- 
+
 Thu Jun  5 11:13:14 2025
  Reader 0: ACS ACR122U PICC Interface 00 00
   Event number: 0
-  Card state: Card removed, 
-   
+  Card state: Card removed,
+
 Thu Jun  5 11:13:20 2025
  Reader 0: ACS ACR122U PICC Interface 00 00
   Event number: 1
-  Card state: Card inserted, 
+  Card state: Card inserted,
   ATR: 3B 8F 80 01 80 4F 0C A0 00 00 03 06 03 00 01 00 00 00 00 6A
 [...]
 ```
@@ -161,51 +158,7 @@ Dieses Skript verwendet einen ACR122U NFC-Kartenleser, um NFC-Chips auszulesen u
 python nfc_reader.py
 ```
 
-### 3. Personen Anlegen (`personen_anlegen.py`) 🧑‍💼
-
-Dieses Skript dient Administratoren dazu, neue Benutzer gesammelt aus einer CSV-Datei zu importieren und sie im Backend-System anzulegen.
-
-#### Spezifische Einrichtung `personen_anlegen.py`
-
-* Erstellen Sie eine CSV-Datei namens `mitglieder.csv` im selben Verzeichnis wie das Skript.
-  * Format pro Zeile: `10-stelliger-Code,Nachname,Vorname` (z.B. `7812934560,Völker,Oliver`).
-* Eine Schriftart-Datei (z.B. `Hack-Bold.ttf`) sollte unter `/usr/share/fonts/TTF/` verfügbar sein für die Beschriftung der QR-Codes. Falls nicht, wird eine Standardschrift verwendet (die könnte aber schwieriger zu lesen sein).
-
-#### Funktionalität `personen_anlegen.py`
-
-* **CSV-Import**: Liest Benutzerdaten (Code, Nachname, Vorname) aus der `mitglieder.csv`.
-* **Benutzeranlage via API**:
-  * Für jeden neuen Benutzer wird das in der `.env`-Datei festgelegte `DEFAULT_PASSWORD` gehasht.
-  * Die Benutzerdaten inklusive des gehashten Passworts werden an den `/person` Endpunkt der API gesendet, um den Benutzer im System anzulegen.
-  * Es wird geprüft, ob ein Benutzer mit dem Code bereits existiert, um Duplikate zu vermeiden (kann mit `--force-creation` umgangen werden).
-
-#### Starten des Skripts
-
-```bash
-python personen_anlegen.py
-```
-
-### 4. QR-Code Generierung (`qrcodes_generieren.py`) ➕
-
-Dieses Skript generiert QR-Codes für die Benutzer in der Datenbank.
-
-#### Funktionalität `qrcodes_generieren.py`
-
-* **QR-Code-Generierung**:
-  * Für jeden neu angelegten (oder per `--force-creation` erzwungenen) Benutzer werden zwei QR-Codes erstellt und in einem Unterverzeichnis `qr-codes/Nachname Vorname/` gespeichert:
-    * `1x bezahlen.png`: Enthält den Code `BENUTZERCODEa` (löst eine Abbuchung aus).
-    * `Saldo anzeigen.png`: Enthält den Code `BENUTZERCODEk` (zeigt den Saldo an).
-  * Ein spezieller QR-Code für "Alle Personen anzeigen" (`39b3bca191be67164317227fec3bed`) wird im Ordner `qr-codes/admin-codes/` erstellt.
-* **Ausgabeordner**: Alle QR-Codes werden im Hauptverzeichnis `qr-codes/` und entsprechenden Unterordnern abgelegt.
-
-#### Starten des Skripts `qrcodes_generieren.py`
-
-```bash
-python qrcodes_generieren.py
-```
-
 ### Wichtige Hinweise ⚠️
 
-* Stellen Sie sicher, dass die in der `.env`-Datei konfigurierten `API_URL`, `API_KEY` und ggf. `DEFAULT_PASSWORD` korrekt sind und mit Ihrem Backend übereinstimmen.
+* Stellen Sie sicher, dass die in der `.env`-Datei konfigurierten `API_URL` und `API_KEY` korrekt sind und mit Ihrem Backend übereinstimmen.
 * Die Client-Terminals (`qrcode_leser.py`, `nfc_reader.py`) führen beim Start einen Healthcheck gegen die API aus, um die Verbindung zu überprüfen.
-* Das Skript `personen_anlegen.py` sollte nur von Administratoren und mit Bedacht ausgeführt werden, da es Änderungen an der Benutzerdatenbank vornimmt.
