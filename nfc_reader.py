@@ -9,6 +9,7 @@ Umgebungsvariablen (.env-Datei) geladen.
 
 import base64
 import binascii
+import logging
 import time
 import os
 import sys
@@ -26,6 +27,15 @@ token_delay = int(os.environ.get("TOKEN_DELAY"))
 my_name = os.environ.get("MY_NAME")
 disable_buzzer = os.getenv('DISABLE_BUZZER', 'False') == 'True'
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stderr)
+    ]
+)
+logger = logging.getLogger(__name__)
+
 def healthcheck():
     """
     Healthcheck gegen API ausführen.
@@ -35,6 +45,24 @@ def healthcheck():
     """
 
     get_url = f"{api_url}/health-protected"
+    get_headers = {
+        'X-API-Key': api_key
+    }
+
+    get_response = hr.get_request(get_url, get_headers)
+    if get_response:
+        return get_response.json()
+    return None
+
+def get_api_version():
+    """
+    API nach aktueller Version fragen.
+
+    Returns:
+        dict or None: Die JSON-Antwort des Version-Endpunktes oder None bei einem Fehler.
+    """
+
+    get_url = f"{api_url}/version"
     get_headers = {
         'X-API-Key': api_key
     }
@@ -71,7 +99,7 @@ def person_transaktion_erstellen(token_hex):
             'beschreibung': beschreibung,
         }
 
-        print(f"NFC-Token {token_hex} ({token_hex_ohne_leerzeichen}) erkannt! Sende an API...")
+        logger.info("NFC-Token %s (%s) erkannt! Sende an API...", token_hex, token_hex_ohne_leerzeichen)
         response = hr.put_request(put_url, put_headers, put_daten)
         response.raise_for_status()
 
@@ -82,17 +110,17 @@ def person_transaktion_erstellen(token_hex):
         return True
     except hr.requests.exceptions.RequestException as e:
         if response is not None and response.status_code == 404:
-            print(f"Benutzer mit Token {token_hex} nicht gefunden (404).")
+            logger.warning("Benutzer mit Token %s nicht gefunden (404).", token_hex)
             sound_ausgabe.sprich_text("fail", "Benutzer nicht gefunden, bitte wende dich an deinen Administrator.", sprache="de")
             return False  # API-Anfrage fehlgeschlagen, Benutzer nicht gefunden
-        print(f"Fehler beim Senden des Tokens an die API: {e}")
+        logger.error("Fehler beim Senden des Tokens an die API: %s", e)
         sound_ausgabe.sprich_text("fail", "API-Fehler, bitte wende dich an deinen Administrator.", sprache="de")
         return False  # Andere API-Fehler
     except binascii.Error:
-        print(f"Fehler: Ungültiger Hexadezimalstring: {token_hex}")
+        logger.error("Fehler: Ungültiger Hexadezimalstring: %s", token_hex)
         return False
     except Exception as e:  # pylint: disable=W0718
-        print(f"Allgemeiner Fehler: {e}")
+        logger.error("Allgemeiner Fehler in person_transaktion_erstellen: %s", e)
         sound_ausgabe.sprich_text("fail", "Es kam zu einem Fehler, bitte wende dich an deinen Administrator.", sprache="de")
         return None
 
@@ -115,7 +143,7 @@ def lese_nfc_token_uid(connection):
             return toHexString(response)
         return None
     except Exception as e:  # pylint: disable=W0718
-        print(f"Fehler beim Lesen des Tokens: {e}")
+        logger.error("Fehler beim Lesen der Token-UID: %s", e)
         return None
 
 def lese_nfc_token_ats(connection):
@@ -137,7 +165,7 @@ def lese_nfc_token_ats(connection):
             return toHexString(response)
         return None
     except Exception as e:  # pylint: disable=W0718
-        print(f"Fehler beim Lesen des Tokens: {e}")
+        logger.error("Fehler beim Lesen des Token-ATS: %s", e)
         return None
 
 def verarbeite_token(token_hex, last_token_time):
@@ -163,7 +191,7 @@ def verarbeite_token(token_hex, last_token_time):
         if transaktion_erfolgreich:
             return jetzt  # Aktualisiere den Zeitstempel
         return None
-    print(f"Token {token_hex} wurde kürzlich verarbeitet. Ignoriere.")
+    logger.info("Token %s wurde kürzlich verarbeitet. Ignoriere.", token_hex)
     return last_token_time
 
 def schalte_buzzer_ab(nfc_reader):
@@ -183,13 +211,12 @@ def schalte_buzzer_ab(nfc_reader):
 
         # Überprüfe Status Code 90 00h für Erfolg
         if sw1 == 0x90 and sw2 == 0x00:
-            print(f"Antwort Daten (Hex): {toHexString(bytes(response))}")
-            print("Buzzer erfolgreich ausgeschaltet (Status Code 90 00h).")
+            logger.info("Buzzer erfolgreich ausgeschaltet. Antwort Daten (Hex): %s", toHexString(bytes(response)))
         else:
-            print(f"Kommando nicht erfolgreich. Status Code: {sw1:02X} {sw2:02X}")
+            logger.warning("Kommando zum Deaktivieren des Buzzers nicht erfolgreich. Status: %02X %02X", sw1, sw2)
             # Laut API Doku (Seite 9/Anhang A) bedeuten andere SWs Fehler
             if sw1 == 0x63 and sw2 == 0x00:
-                print("Laut API-Dokumentation: Operation fehlgeschlagen (Status Code 63 00h).")
+                logger.warning("Laut API-Dokumentation: Operation fehlgeschlagen (Status Code 63 00h).")
     except CardConnectionException as e:
         error_message = str(e)
         if "No smart card inserted" in error_message:
@@ -197,10 +224,10 @@ def schalte_buzzer_ab(nfc_reader):
                 last_token_time = None # Setze Zeit zurück, wenn kein Token mehr da
             time.sleep(0.2)
         else:
-            print(f"Fehler bei der Tokenverbindung: {e}")
+            logger.error("Fehler bei der Tokenverbindung: %s", e)
             time.sleep(0.2)
     except Exception as e:  # pylint: disable=W0718
-        print(f"Unerwarteter Fehler beim Lesen: {e}")
+        logger.error("Unerwarteter Fehler beim Lesen: %s", e)
         time.sleep(0.2)
     finally:
         if connection:
@@ -227,7 +254,7 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
         nfc_reader (smartcard.pcsc.PCSCReader): Das Reader-Objekt, das für die NFC-Kommunikation verwendet wird.
     """
 
-    print(f"\nStarte kontinuierliche NFC-Lesung auf Reader: {nfc_reader}")
+    logger.info("Starte kontinuierliche NFC-Lesung auf Reader: %s", nfc_reader)
     last_token_time = None  # Speichert die letzte Verarbeitungszeit des Tokens
 
     try:
@@ -244,13 +271,13 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
 
                 ats_hex = lese_nfc_token_ats(connection)
                 if ats_hex:
-                    #print("ATS gefunden.")
+                    #logger.info("ATS gefunden.")
                     last_token_time = verarbeite_token(ats_hex, last_token_time)
                 else:
-                    #print("Kein ATS gefunden.")
+                    #logger.info("Kein ATS gefunden.")
                     uid_hex = lese_nfc_token_uid(connection)
                     if uid_hex:
-                        #print("UID gefunden.")
+                        #logger.info("UID gefunden.")
                         last_token_time = verarbeite_token(uid_hex, last_token_time)
 
                 if not ats_hex and not uid_hex:
@@ -265,10 +292,10 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
                         last_token_time = None # Setze Zeit zurück, wenn kein Token mehr da
                     time.sleep(0.2)
                 else:
-                    print(f"Fehler bei der Tokenverbindung: {e}")
+                    logger.critical("Fehler bei der Tokenverbindung: %s", e)
                     time.sleep(0.2)
             except Exception:  # pylint: disable=W0718
-                #print(f"Unerwarteter Fehler in der Leseschleife: {e}")
+                #logger.warning(f"Unerwarteter Fehler in der Leseschleife: {e}")
                 time.sleep(0.2)
             finally:
                 if connection:
@@ -278,33 +305,30 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
                         pass  # Fehler beim Trennen sind nicht kritisch
 
     except KeyboardInterrupt:
-        print("\nNFC-Reader wird beendet.")
+        logger.info("NFC-Leser wird durch Benutzer beendet.")
     finally:
-        print("NFC-Reader beendet.")
+        logger.info("NFC-Leser beendet.")
 
 if __name__ == "__main__":
-    if not api_url:
-        print("Fehler: API_URL ist nicht in den Umgebungsvariablen definiert.")
-        sys.exit(1)
-    if not api_key:
-        print("Fehler: API_KEY ist nicht in den Umgebungsvariablen definiert.")
+    if not api_url or not api_key:
+        logger.critical("API_URL oder API_KEY sind nicht in den Umgebungsvariablen definiert.")
         sys.exit(1)
 
     try:
-        health_status = healthcheck()
-        if health_status is None:
-            print("Healthcheck fehlgeschlagen. Beende Skript.")
+        if healthcheck() is None:
+            logger.critical("Healthcheck fehlgeschlagen. Beende Skript.")
             sys.exit(1)
+        logger.info("API Healthcheck erfolgreich.")
+
+        version = get_api_version()
 
         reader_list = readers()
         if not reader_list:
-            print("Keine PC/SC-Reader gefunden.")
+            logger.critical("Keine PC/SC-Reader gefunden.")
             sys.exit()
 
         # deaktiviert, nützlich für Debugging
-        # print("Verfügbare Reader:")
-        # for i, reader in enumerate(reader_list):
-        #     print(f"[{i}] {reader}")
+        # logger.info("Verfügbare Reader: %s", reader_list)
 
         ACR122U_READER = None
         for reader in reader_list:
@@ -314,23 +338,23 @@ if __name__ == "__main__":
 
         if ACR122U_READER:
             if disable_buzzer:
-                print("Buzzer wird deaktiviert.")
+                logger.info("Deaktiviere Buzzer...")
                 schalte_buzzer_ab(ACR122U_READER)
             lies_nfc_kontinuierlich(ACR122U_READER)
         else:
-            print("ACR122U Reader nicht gefunden.")
+            logger.critical("ACR122U Reader nicht gefunden.")
 
-    except ImportError:
-        print("Das Modul 'pyscard' ist nicht installiert.")
     except NoReadersException as e:
-        print(f"{e}")
+        logger.critical("Fehler: %s", e)
         sys.exit(1)
     except CardConnectionException as e:
-        print(f"Fehler bei der Tokenverbindung: {e}")
+        logger.critical("Fehler bei der Tokenverbindung: %s", e)
         sys.exit(1)
     except SmartcardException as e:
-        print(f"Smartcard-Fehler ist aufgetreten: {e}")
+        logger.critical("Ein Smartcard-Fehler ist aufgetreten: %s", e)
         sys.exit(1)
     except Exception as e:  # pylint: disable=W0718
-        print(f"Ein unerwarteter Fehler im Hauptteil des Skripts ist aufgetreten: {e}")
+        logger.critical("Ein unerwarteter Fehler im Hauptteil ist aufgetreten: %s", e)
         sys.exit(1)
+    finally:
+        logger.info("Programm beendet.")

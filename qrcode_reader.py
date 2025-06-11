@@ -2,6 +2,7 @@
 
 """Liest QR-Codes über Webcam und agiert auf enhaltene Codes"""
 
+import logging
 import sys
 import time
 import json
@@ -13,22 +14,20 @@ from pyzbar.pyzbar import decode
 import handle_requests as hr
 import sound_ausgabe
 
-# Format der QR-Codes
-# Der Benutzercode hat 11 Stellen.
-# Die letzte Stelle kann sein:
-# a Saldoänderung -1
-# r Benutzer auf 0 setzen
-# k gib das Saldo des Benutzers aus
-# l Benutzer löschen -- Funktion auskommentiert
-
-# Spezialcodes:
-# Das Saldo aller Benutzer anzeigen: 39b3bca191be67164317227fec3bed
-
 load_dotenv()
 api_url=os.environ.get("API_URL")
 api_key=os.environ.get("API_KEY")
 my_name = os.environ.get("MY_NAME")
 camera_index = int(os.environ.get("CAMERA_INDEX"))
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stderr)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 def json_daten_ausgeben(daten):
     """
@@ -47,29 +46,32 @@ def json_daten_ausgeben(daten):
         try:
             daten_obj = json.loads(daten)
         except json.JSONDecodeError as e:
-            print(f"Fehler beim Dekodieren des JSON-Strings: {e}.")
+            logger.error("Fehler beim Dekodieren des JSON-Strings: %s.", e)
             return
     else:
         daten_obj = daten
 
     # Stelle sicher, dass wir eine Liste von Dictionaries haben.
     if isinstance(daten_obj, list):
-        print("\nAktuelle Salden:")
-        print("-" * 40)
+        logger.info("\nAktuelle Salden:")
+        logger.info("-" * 40)
         for eintrag in daten_obj:
             if isinstance(eintrag, dict):
-                print(
-                    f"{eintrag.get('nachname', 'N/A')} {eintrag.get('vorname', 'N/A'):<{spalte1_breite}}: {eintrag.get('saldo', 'N/A'):>{spalte2_breite}}")
+                log_message = (
+                    f"{eintrag.get('nachname', 'N/A')} {eintrag.get('vorname', 'N/A'):<{spalte1_breite}}: "
+                    f"{eintrag.get('saldo', 'N/A'):>{spalte2_breite}}"
+                )
+                logger.info(log_message)
             else:
-                print(
+                logger.error(
                     "Fehler: Jeder Eintrag in der Liste sollte ein Dictionary sein.")
                 return
-        print("-" * 40)
+        logger.info("-" * 40)
     elif isinstance(daten_obj, dict):
-        print(
-            f"{daten_obj.get('nachname', 'N/A')} {daten_obj.get('vorname', 'N/A')}: {daten_obj.get('saldo', 'N/A')}")
+        log_message = f"{daten_obj.get('nachname', 'N/A')} {daten_obj.get('vorname', 'N/A')}: {daten_obj.get('saldo', 'N/A')}"
+        logger.info(log_message)
     else:
-        print(
+        logger.error(
             "Fehler: Die Eingabe sollte ein gültiger JSON-String oder eine Liste/Dictionary sein.")
         return
 
@@ -88,7 +90,7 @@ def qr_code_lesen(cap_video):
     while True:
         ret, frame = cap_video.read()
         if not ret:
-            print("Frame konnte nicht gelesen werden!")
+            logger.error("Frame konnte nicht gelesen werden!")
             break
 
         if wartezeit_aktiv and (time.time() - wartezeit_start < 5):
@@ -137,7 +139,7 @@ def werte_qr_code_aus(qr_code):
     Args:
         qr_code (str): Der Inhalt des gelesenen QR-Codes.
     """
-    # print(f"Code gelesen: {qr_code}")
+    # logger.info("Code gelesen: %s", qr_code)
     system_beep_ascii()
     if (qr_code) == "39b3bca191be67164317227fec3bed":
         daten_alle = daten_lesen_alle()
@@ -146,7 +148,7 @@ def werte_qr_code_aus(qr_code):
         if (len(qr_code)) == 11:
             its_a_usercode(qr_code)
         else:
-            print(f"\nUnbekannter Code: {qr_code}")
+            logger.warning("Unbekannter Code: %s", qr_code)
 
 def its_a_usercode(usercode):
     """
@@ -156,12 +158,11 @@ def its_a_usercode(usercode):
         usercode (str): Der gelesene Benutzercode.
     """
 
-    print("")
     code = usercode[:10] # die ersten 10 Stellen des usercodes sind dem Benutzer zugeordnet
     aktion = usercode[-1] # letztes Zeichen im usercode bestimmt die auszuführende Aktion
     beschreibung = my_name
 
-    print(f"Benutzer: {code} - Aktion: {aktion}. ")
+    logger.info("Benutzer: %s - Aktion: %s.", code, aktion)
 
     # beep sound wenn Token gescannt wurde
     sound_ausgabe.play_sound_effect("beep2.mp3")
@@ -179,11 +180,11 @@ def its_a_usercode(usercode):
         abfrage = person_daten_lesen(code)
         if abfrage:
             nachname, vorname, saldo = abfrage
-            print(f"Der Saldo für {vorname} {nachname} ist {saldo} €.")
+            logger.info("Der Saldo für %s %s ist %s €.", vorname, nachname, saldo)
             sound_ausgabe.sprich_text("tagesschau", f"Hallo {vorname}! Dein Kontostand beträgt momentan {saldo} €.", sprache="de")
             return
     else:
-        print("Mit dem Code stimmt etwas nicht.")
+        logger.error("Mit dem Code stimmt etwas nicht.")
         sound_ausgabe.sprich_text("fail", "Mit deinem QR-Code stimmt etwas nicht. Bitte wende dich an deinen Administrator.", sprache="de")
         return
 
@@ -196,6 +197,24 @@ def healthcheck():
     """
 
     get_url = f"{api_url}/health-protected"
+    get_headers = {
+        'X-API-Key': api_key
+    }
+
+    get_response = hr.get_request(get_url, get_headers)
+    if get_response:
+        return get_response.json()
+    return None
+
+def get_api_version():
+    """
+    API nach aktueller Version fragen.
+
+    Returns:
+        dict or None: Die JSON-Antwort des Version-Endpunktes oder None bei einem Fehler.
+    """
+
+    get_url = f"{api_url}/version"
     get_headers = {
         'X-API-Key': api_key
     }
@@ -244,7 +263,7 @@ def person_daten_lesen(code):
 
     person_daten = get_response.json()
     if 'error' in person_daten:
-        print(f"Fehler beim Abrufen der Personendaten: {person_daten['error']}.")
+        logger.error("Fehler beim Abrufen der Personendaten: %s.", person_daten['error'])
         return None
     if person_daten:
         return (person_daten['nachname'], person_daten['vorname'], person_daten['saldo'])
@@ -292,7 +311,7 @@ def exit_gracefully(cap_video=None):
         cap_video (cv2.VideoCapture): Das VideoCapture-Objekt der Kamera.
     """
 
-    print('Räume auf und beende das Programm ordentlich.')
+    logger.info('Räume auf und beende das Programm ordentlich.')
     if cap_video:
         cap_video.release()
         cv2.destroyAllWindows()
@@ -300,34 +319,35 @@ def exit_gracefully(cap_video=None):
 
 if __name__ == "__main__":
     if not api_url:
-        print("Fehler: API_URL ist nicht in den Umgebungsvariablen definiert.")
+        logger.critical("API_URL ist nicht in den Umgebungsvariablen definiert.")
         sys.exit(1)
     if not api_key:
-        print("Fehler: API_KEY ist nicht in den Umgebungsvariablen definiert.")
+        logger.critical("API_KEY ist nicht in den Umgebungsvariablen definiert.")
         sys.exit(1)
 
     try:
         health_status = healthcheck()
         if health_status is None:
-            print("Healthcheck fehlgeschlagen. Beende Skript.")
+            logger.critical("Healthcheck fehlgeschlagen. Beende Skript.")
             sys.exit(1)
+
+        version = get_api_version()
 
         cap = cv2.VideoCapture(camera_index)
         if not cap.isOpened():
             raise IOError("Kamera konnte nicht geöffnet werden.")
-        print("\nBereitschaft.\n")
+        logger.info("Bereitschaft (Version %s).", version)
         qr_code_lesen(cap)
     except ImportError as e:
-        print(f"Ein Importfehler ist aufgetreten: {e}.")
+        logger.critical("Ein Importfehler ist aufgetreten: %s.", e)
     except IOError as e:
-        print(f"Fehler beim Öffnen der Kamera: {e}.")
+        logger.error("Fehler beim Öffnen der Kamera: %s.", e)
     except KeyboardInterrupt:
         pass
     except Exception as e:  # pylint: disable=W0718
-        print(f"Ein unerwarteter Fehler im Hauptteil des Skripts ist aufgetreten: {e}")
+        logger.critical("Ein unerwarteter Fehler im Hauptteil ist aufgetreten: %s", e)
         sys.exit(1)
     finally:
-        if 'cap' in locals() and cap.isOpened():
-            cap.release()
+        if cap and cap.isOpened():
             exit_gracefully(cap)
         exit_gracefully()

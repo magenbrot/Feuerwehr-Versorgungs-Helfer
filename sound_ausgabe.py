@@ -3,19 +3,10 @@
 import os
 import logging
 import time
-import sys
 import pygame
 from gtts import gTTS
 from gtts.tts import gTTSError
 
-# Logger konfigurieren
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stderr)
-    ]
-)
 logger = logging.getLogger(__name__)
 
 def _initialize_mixer():

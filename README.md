@@ -104,6 +104,15 @@ pip install -r requirements.txt
 
 Dieses Skript startet eine Webcam, erkennt QR-Codes und führt basierend auf dem Inhalt Aktionen über die API aus.
 
+#### Aufbau der QR-Codes
+
+* Format der QR-Codes
+* Der Benutzercode hat 11 Stellen. Die letzte Stelle kann sein:
+  * a Saldoänderung -1
+  * k gib das Saldo des Benutzers aus
+* Spezialcodes:
+  * Das Saldo aller Benutzer anzeigen: 39b3bca191be67164317227fec3bed
+
 #### Spezifische Einrichtung für QR-Code Leser
 
 * Eine angeschlossene Webcam.

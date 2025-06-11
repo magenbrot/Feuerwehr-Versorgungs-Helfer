@@ -1,7 +1,9 @@
 """Definiert gemeinsam genutzte Funktionen für HTTP-Anfragen."""
 
+import logging
 import requests
 
+logger = logging.getLogger(__name__)
 
 def delete_request(url, headers=None):
     """
@@ -19,7 +21,7 @@ def delete_request(url, headers=None):
         response.raise_for_status()
         return response
     except requests.exceptions.RequestException as e:
-        print(f"Fehler beim DELETE-Request: {e}.")
+        logger.error("Fehler beim DELETE-Request an %s: %s", url, e)
         return response
 
 
@@ -39,7 +41,7 @@ def get_request(url, headers=None, params=None):
         response.raise_for_status() # Wirft eine Exception für fehlerhafte Statuscodes
         return response
     except requests.exceptions.RequestException as e:
-        print(f"Fehler beim GET-Request: {e}.")
+        logger.error("Fehler beim GET-Request an %s: %s", url, e)
         return response
 
 
@@ -60,7 +62,7 @@ def post_request(url, headers=None, json_data=None):
         response.raise_for_status()
         return response
     except requests.exceptions.RequestException as e:
-        print(f"Fehler beim POST-Request: {e}.")
+        logger.error("Fehler beim POST-Request an %s: %s", url, e)
         return response
 
 
@@ -82,5 +84,5 @@ def put_request(url, headers=None, json_data=None):
         response.raise_for_status()
         return response
     except requests.exceptions.RequestException as e:
-        print(f"Fehler beim PUT-Request: {e}.")
+        logger.error("Fehler beim PUT-Request an %s: %s", url, e)
         return response
