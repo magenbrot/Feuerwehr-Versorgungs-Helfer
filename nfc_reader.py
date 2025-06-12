@@ -105,7 +105,7 @@ def person_transaktion_erstellen(token_hex: str) -> bool:
         }
 
         # 2. API-Anfrage senden und auf HTTP-Fehler prüfen
-        logger.info("Sende NFC-Token %s an die API...", token_hex)
+        logger.info("Sende NFC-Token %s an die API...", token_hex_sauber)
         response = hr.put_request(put_url, put_headers, put_daten)
         response.raise_for_status()  # Löst bei 4xx/5xx eine Exception aus
 
@@ -123,7 +123,7 @@ def person_transaktion_erstellen(token_hex: str) -> bool:
     except hr.requests.exceptions.RequestException as e:
         # Gezielte Fehlerbehandlung für HTTP-Statuscodes
         if response is not None and response.status_code == 404:
-            logger.warning("Benutzer mit Token %s nicht gefunden (404).", token_hex)
+            logger.warning("Benutzer mit Token %s nicht gefunden (404).", token_hex_sauber)
             sound_ausgabe.sprich_text("error", "Benutzer nicht gefunden.", sprache="de")
         elif response is not None and response.status_code == 403:
             fehler_nachricht = response.json().get('error', 'Benutzer gesperrt.')
@@ -134,7 +134,7 @@ def person_transaktion_erstellen(token_hex: str) -> bool:
             sound_ausgabe.sprich_text("error", "API-Fehler.", sprache="de")
 
     except binascii.Error:
-        logger.error("Fehler: Ungültiger Hexadezimalstring: %s", token_hex)
+        logger.error("Fehler: Ungültiger Hexadezimalstring: %s", token_hex_sauber)
         sound_ausgabe.sprich_text("error", "Ungültiger Token gelesen.", sprache="de")
 
     except Exception as e:  # pylint: disable=W0718
