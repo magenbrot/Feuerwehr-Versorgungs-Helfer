@@ -173,6 +173,9 @@ def its_a_usercode(usercode):
         if response.json().get('action') == 'block':
             sound_ausgabe.sprich_text("wah-wah", f"{response.json()['message']}", sprache="de")
             return
+        elif  response.json().get('action') == 'locked':
+            sound_ausgabe.sprich_text("error", f"{response.json()['message']}", sprache="de")
+            return
         sound_ausgabe.sprich_text("plopp1", f"{response.json()['message']}", sprache="de")
         return
     if (aktion) == "k":
@@ -185,7 +188,7 @@ def its_a_usercode(usercode):
             return
     else:
         logger.error("Mit dem Code stimmt etwas nicht.")
-        sound_ausgabe.sprich_text("fail", "Mit deinem QR-Code stimmt etwas nicht. Bitte wende dich an deinen Administrator.", sprache="de")
+        sound_ausgabe.sprich_text("error", "Mit deinem QR-Code stimmt etwas nicht. Bitte wende dich an deinen Administrator.", sprache="de")
         return
 
 def healthcheck():
@@ -221,7 +224,7 @@ def get_api_version():
 
     get_response = hr.get_request(get_url, get_headers)
     if get_response:
-        return get_response.json()
+        return get_response.json().get('version')
     return None
 
 def daten_lesen_alle():

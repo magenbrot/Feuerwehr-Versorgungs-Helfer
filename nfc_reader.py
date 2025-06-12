@@ -69,7 +69,7 @@ def get_api_version():
 
     get_response = hr.get_request(get_url, get_headers)
     if get_response:
-        return get_response.json()
+        return get_response.json().get('version')
     return None
 
 def person_transaktion_erstellen(token_hex):
@@ -111,17 +111,22 @@ def person_transaktion_erstellen(token_hex):
     except hr.requests.exceptions.RequestException as e:
         if response is not None and response.status_code == 404:
             logger.warning("Benutzer mit Token %s nicht gefunden (404).", token_hex)
-            sound_ausgabe.sprich_text("fail", "Benutzer nicht gefunden, bitte wende dich an deinen Administrator.", sprache="de")
+            sound_ausgabe.sprich_text("error", "Benutzer nicht gefunden, bitte wende dich an deinen Administrator.", sprache="de")
             return False  # API-Anfrage fehlgeschlagen, Benutzer nicht gefunden
+        elif response is not None and response.status_code == 403:
+            logger.warning("Benutzer ist gesperrt (403).")
+            sound_ausgabe.sprich_text("error", f"{response.json()['error']}", sprache="de")
+            #sound_ausgabe.sprich_text("error", "Dein Benutzer ist gesperrt, bitte wende dich an einen Verantwortlichen.", sprache="de")
+            return False  # API-Anfrage fehlgeschlagen, Benutzer in der DB gesperrt
         logger.error("Fehler beim Senden des Tokens an die API: %s", e)
-        sound_ausgabe.sprich_text("fail", "API-Fehler, bitte wende dich an deinen Administrator.", sprache="de")
+        sound_ausgabe.sprich_text("error", "API-Fehler, bitte wende dich an deinen Administrator.", sprache="de")
         return False  # Andere API-Fehler
     except binascii.Error:
         logger.error("Fehler: Ungültiger Hexadezimalstring: %s", token_hex)
         return False
     except Exception as e:  # pylint: disable=W0718
         logger.error("Allgemeiner Fehler in person_transaktion_erstellen: %s", e)
-        sound_ausgabe.sprich_text("fail", "Es kam zu einem Fehler, bitte wende dich an deinen Administrator.", sprache="de")
+        sound_ausgabe.sprich_text("error", "Es kam zu einem Fehler, bitte wende dich an deinen Administrator.", sprache="de")
         return None
 
 def lese_nfc_token_uid(connection):
@@ -320,8 +325,6 @@ if __name__ == "__main__":
             sys.exit(1)
         logger.info("API Healthcheck erfolgreich.")
 
-        version = get_api_version()
-
         reader_list = readers()
         if not reader_list:
             logger.critical("Keine PC/SC-Reader gefunden.")
@@ -329,6 +332,9 @@ if __name__ == "__main__":
 
         # deaktiviert, nützlich für Debugging
         # logger.info("Verfügbare Reader: %s", reader_list)
+
+        version = get_api_version()
+        logger.info("Bereitschaft (Version %s).", version)
 
         ACR122U_READER = None
         for reader in reader_list:
