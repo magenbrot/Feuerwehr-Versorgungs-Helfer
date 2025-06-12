@@ -9,8 +9,10 @@ import json
 import os
 from dotenv import load_dotenv
 import cv2
+
 # import numpy as np # nur für optionale Visualisierung
 from pyzbar.pyzbar import decode
+
 import handle_requests as hr
 import sound_ausgabe
 

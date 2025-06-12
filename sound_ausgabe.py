@@ -3,7 +3,10 @@
 import os
 import logging
 import time
-import pygame
+from contextlib import redirect_stdout
+from io import StringIO
+with redirect_stdout(StringIO()):
+    import pygame
 from gtts import gTTS
 from gtts.tts import gTTSError
 

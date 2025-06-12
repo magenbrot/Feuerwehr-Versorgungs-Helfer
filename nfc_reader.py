@@ -13,7 +13,7 @@ import logging
 import time
 import os
 import sys
-from smartcard.Exceptions import CardConnectionException, SmartcardException, NoReadersException
+from smartcard.Exceptions import NoCardException, CardConnectionException, SmartcardException, NoReadersException
 from smartcard.System import readers
 from smartcard.util import toHexString
 from dotenv import load_dotenv
@@ -26,6 +26,7 @@ api_key = os.environ.get("API_KEY")
 token_delay = int(os.environ.get("TOKEN_DELAY"))
 my_name = os.environ.get("MY_NAME")
 disable_buzzer = os.getenv('DISABLE_BUZZER', 'False') == 'True'
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "1"
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -214,7 +215,7 @@ def verarbeite_token(token_hex, last_token_time):
 
 def schalte_buzzer_ab(nfc_reader):
     """
-    Schaltet den Hardware-Buzzer ab
+    Versucht den Hardware-Buzzer abzuschalten.
 
     Args:
         nfc_reader (smartcard.pcsc.PCSCReader): Das Reader-Objekt, das für die NFC-Kommunikation verwendet wird.
@@ -235,11 +236,13 @@ def schalte_buzzer_ab(nfc_reader):
             # Laut API Doku (Seite 9/Anhang A) bedeuten andere SWs Fehler
             if sw1 == 0x63 and sw2 == 0x00:
                 logger.warning("Laut API-Dokumentation: Operation fehlgeschlagen (Status Code 63 00h).")
+    except NoCardException:
+        logger.warning("Es ist kein Token aufgelegt.")
+        time.sleep(0.2)
     except CardConnectionException as e:
         error_message = str(e)
         if "No smart card inserted" in error_message:
-            if last_token_time is not None:
-                last_token_time = None # Setze Zeit zurück, wenn kein Token mehr da
+            logger.warning("Es ist keine Karte aufgelegt: %s", e)
             time.sleep(0.2)
         else:
             logger.error("Fehler bei der Tokenverbindung: %s", e)
