@@ -72,62 +72,75 @@ def get_api_version():
         return get_response.json().get('version')
     return None
 
-def person_transaktion_erstellen(token_hex):
+def person_transaktion_erstellen(token_hex: str) -> bool:
     """
-    Wird aufgerufen, wenn ein NFC-Token erkannt wurde. Sendet die UID als Bytes an die API.
+    Verarbeitet eine NFC-Token-Transaktion durch Senden der UID an eine API.
+
+    Diese Funktion nimmt die Hex-UID eines NFC-Tokens entgegen, konvertiert sie,
+    sendet sie an einen API-Endpunkt und verarbeitet die Antwort. Sie gibt
+    akustisches Feedback basierend auf dem Ergebnis.
 
     Args:
-        token_hex (str): Die eindeutige ID (UID) des erkannten NFC-Tokens als Hex-String.
+        token_hex: Die eindeutige ID (UID) des erkannten NFC-Tokens
+                   als Hex-String.
 
     Returns:
-        bool: True, wenn die API-Anfrage erfolgreich war (Statuscode 2xx), False bei anderen Fehlern.
+        True, wenn die API-Transaktion erfolgreich war (Status 2xx),
+        andernfalls False bei jeglicher Art von Fehler.
     """
-
-    beschreibung=my_name
-
+    erfolgreich = False
     put_url = f"{api_url}/nfc-transaktion"
-    put_headers = {
-        'X-API-Key': api_key
-    }
+    put_headers = {'X-API-Key': api_key}
+    response = None
 
     try:
-        token_hex_ohne_leerzeichen = token_hex.replace(" ", "") # Entferne die Leerzeichen aus dem Hex-String
-        token_bytes = binascii.unhexlify(token_hex_ohne_leerzeichen)
+        # 1. Token vorbereiten und validieren
+        token_hex_sauber = token_hex.replace(" ", "")
+        token_bytes = binascii.unhexlify(token_hex_sauber)
         token_base64 = base64.b64encode(token_bytes).decode('utf-8')
         put_daten = {
             'token': token_base64,
-            'beschreibung': beschreibung,
+            'beschreibung': my_name,
         }
 
-        logger.info("NFC-Token %s (%s) erkannt! Sende an API...", token_hex, token_hex_ohne_leerzeichen)
+        # 2. API-Anfrage senden und auf HTTP-Fehler prüfen
+        logger.info("Sende NFC-Token %s an die API...", token_hex)
         response = hr.put_request(put_url, put_headers, put_daten)
-        response.raise_for_status()
+        response.raise_for_status()  # Löst bei 4xx/5xx eine Exception aus
 
-        if response.json().get('action') == 'block':
-            sound_ausgabe.sprich_text("wah-wah", f"{response.json()['message']}", sprache="de")
-            return True
-        sound_ausgabe.sprich_text("plopp1", f"{response.json()['message']}", sprache="de")
-        return True
+        # 3. Erfolgreiche Antwort (2xx) verarbeiten
+        antwort_json = response.json()
+        nachricht = antwort_json.get('message', 'Aktion erfolgreich.')
+
+        if antwort_json.get('action') == 'block':
+            sound_ausgabe.sprich_text("wah-wah", nachricht, sprache="de")
+        else:
+            sound_ausgabe.sprich_text("plopp1", nachricht, sprache="de")
+
+        erfolgreich = True
+
     except hr.requests.exceptions.RequestException as e:
+        # Gezielte Fehlerbehandlung für HTTP-Statuscodes
         if response is not None and response.status_code == 404:
             logger.warning("Benutzer mit Token %s nicht gefunden (404).", token_hex)
-            sound_ausgabe.sprich_text("error", "Benutzer nicht gefunden, bitte wende dich an deinen Administrator.", sprache="de")
-            return False  # API-Anfrage fehlgeschlagen, Benutzer nicht gefunden
+            sound_ausgabe.sprich_text("error", "Benutzer nicht gefunden.", sprache="de")
         elif response is not None and response.status_code == 403:
-            logger.warning("Benutzer ist gesperrt (403).")
-            sound_ausgabe.sprich_text("error", f"{response.json()['error']}", sprache="de")
-            #sound_ausgabe.sprich_text("error", "Dein Benutzer ist gesperrt, bitte wende dich an einen Verantwortlichen.", sprache="de")
-            return False  # API-Anfrage fehlgeschlagen, Benutzer in der DB gesperrt
-        logger.error("Fehler beim Senden des Tokens an die API: %s", e)
-        sound_ausgabe.sprich_text("error", "API-Fehler, bitte wende dich an deinen Administrator.", sprache="de")
-        return False  # Andere API-Fehler
+            fehler_nachricht = response.json().get('error', 'Benutzer gesperrt.')
+            logger.warning("Benutzer ist gesperrt (403): %s", fehler_nachricht)
+            sound_ausgabe.sprich_text("error", fehler_nachricht, sprache="de")
+        else:
+            logger.error("Fehler bei der API-Anfrage: %s", e)
+            sound_ausgabe.sprich_text("error", "API-Fehler.", sprache="de")
+
     except binascii.Error:
         logger.error("Fehler: Ungültiger Hexadezimalstring: %s", token_hex)
-        return False
+        sound_ausgabe.sprich_text("error", "Ungültiger Token gelesen.", sprache="de")
+
     except Exception as e:  # pylint: disable=W0718
-        logger.error("Allgemeiner Fehler in person_transaktion_erstellen: %s", e)
-        sound_ausgabe.sprich_text("error", "Es kam zu einem Fehler, bitte wende dich an deinen Administrator.", sprache="de")
-        return None
+        logger.error("Allgemeiner Fehler: %s", e, exc_info=True)
+        sound_ausgabe.sprich_text("error", "Ein unerwarteter Fehler ist aufgetreten.", sprache="de")
+
+    return erfolgreich
 
 def lese_nfc_token_uid(connection):
     """

@@ -173,7 +173,7 @@ def its_a_usercode(usercode):
         if response.json().get('action') == 'block':
             sound_ausgabe.sprich_text("wah-wah", f"{response.json()['message']}", sprache="de")
             return
-        elif  response.json().get('action') == 'locked':
+        if  response.json().get('action') == 'locked':
             sound_ausgabe.sprich_text("error", f"{response.json()['message']}", sprache="de")
             return
         sound_ausgabe.sprich_text("plopp1", f"{response.json()['message']}", sprache="de")
