@@ -167,7 +167,7 @@ def its_a_usercode(usercode):
     logger.info("Benutzer: %s - Aktion: %s.", code, aktion)
 
     # beep sound wenn Token gescannt wurde
-    sound_ausgabe.play_sound_effect("beep2.mp3")
+    sound_ausgabe.play_sound_effect("beep1")
 
     if (aktion) == "a":
         # lade den Benutzer aus der DB

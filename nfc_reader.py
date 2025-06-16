@@ -131,7 +131,7 @@ def person_transaktion_erstellen(token_hex: str) -> bool:
             sound_ausgabe.sprich_text("error", fehler_nachricht, sprache="de")
         else:
             logger.error("Fehler bei der API-Anfrage: %s", e)
-            sound_ausgabe.sprich_text("error", "API-Fehler.", sprache="de")
+            sound_ausgabe.sprich_text("error", "API-Fehler, bitte informiere einen Administrator.", sprache="de")
 
     except binascii.Error:
         logger.error("Fehler: Ungültiger Hexadezimalstring: %s", token_hex_sauber)
@@ -203,7 +203,7 @@ def verarbeite_token(token_hex, last_token_time):
 
     if last_token_time is None or jetzt - last_token_time >= token_delay:
         # beep sound wenn Token gescannt wurde
-        sound_ausgabe.play_sound_effect("beep2.mp3")
+        sound_ausgabe.play_sound_effect("beep1")
         transaktion_erfolgreich = person_transaktion_erstellen(token_hex)
         #saldo_ausgeben_erfolgreich = person_daten_lesen(token_hex)
         #if transaktion_erfolgreich and saldo_ausgeben_erfolgreich:
