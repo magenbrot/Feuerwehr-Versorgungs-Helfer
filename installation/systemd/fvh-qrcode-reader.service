@@ -1,0 +1,15 @@
+[Unit]
+Description=Feuerwehr-Versorgungs-Helfer QR-Code Reader
+After=network.target
+
+[Service]
+Type=simple
+User=<user>
+Group=<group>
+WorkingDirectory=/home/<user>/Feuerwehr-Versorgungs-Helfer
+Environment="PATH=/home/<user>/Feuerwehr-Versorgungs-Helfer/venv/bin"
+ExecStart=/home/<user>/Feuerwehr-Versorgungs-Helfer/qrcode_reader.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
