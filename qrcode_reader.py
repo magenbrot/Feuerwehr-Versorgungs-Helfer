@@ -21,9 +21,10 @@ api_url=os.environ.get("API_URL")
 api_key=os.environ.get("API_KEY")
 my_name = os.environ.get("MY_NAME")
 camera_index = int(os.environ.get("CAMERA_INDEX"))
+log_level = os.getenv('LOG_LEVEL', 'INFO')
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=log_level,
     format='%(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stderr)

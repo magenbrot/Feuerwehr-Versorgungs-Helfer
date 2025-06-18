@@ -26,10 +26,11 @@ api_key = os.environ.get("API_KEY")
 token_delay = int(os.environ.get("TOKEN_DELAY"))
 my_name = os.environ.get("MY_NAME")
 disable_buzzer = os.getenv('DISABLE_BUZZER', 'False') == 'True'
+log_level = os.getenv('LOG_LEVEL', 'INFO')
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "1"
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=log_level,
     format='%(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stderr)
