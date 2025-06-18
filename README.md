@@ -106,12 +106,12 @@ pip install -r requirements.txt
 
 Der Start der Applikationen soll über systemd erfolgen. Dazu sollten sie bereits läuffähig sein (also ein Python3 venv existieren und die benötigten Module installiert sein, siehe unten).
 
-- Die Dateien aus `installation/systemd` nach `/etc/systemd/system/` kopieren und anpassen.
-- Systemd reloaden `systemd daemon-reload`
-- Die beiden Services aktivieren: `systemd enable --now fvh-qrcode-reader.service; systemd enable --now fvh-nfc-reader.service`
-- Logfiles prüfen:
-  * `journalctl -u fvh-qrcode-reader.service`
-  * `journalctl -u fvh-nfc-reader.service`
+* Die Dateien aus `installation/systemd` nach `/etc/systemd/system/` kopieren und anpassen.
+* Systemd reloaden `systemd daemon-reload`
+* Die beiden Services aktivieren: `systemd enable --now fvh-qrcode-reader.service; systemd enable --now fvh-nfc-reader.service`
+* Logfiles prüfen:
+  1. `journalctl -u fvh-qrcode-reader.service`
+  2. `journalctl -u fvh-nfc-reader.service`
 
 ## Die Applikationen
 
