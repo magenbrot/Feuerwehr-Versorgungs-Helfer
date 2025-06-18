@@ -24,7 +24,7 @@ Die Anwendungen und Skripte dienen unterschiedlichen Zwecken:
 
 ## Installation 🔧
 
-Umgebung vorbereiten (root):
+### Umgebung vorbereiten (root)
 
 * `pcscd` `pcsc-tools` `libpcsclite-dev`: SmartCard Tools für Linux, notwendig für den USB NFC-Reader und das Python-Modul `pyscard`
 * `libgl1`: Für das Python-Modul `opencv-python`
@@ -68,6 +68,8 @@ apt update
 apt install pcscd pcsc-tools libpcsclite-dev libgl1 libzbar0t64 python3-dev
 ```
 
+### Hardware testen
+
 Testen des NFC-Readers über das Tool `pcsc_scan`. Es sollten dann die passenden Events ausgegeben werden:
 
 ```bash
@@ -91,7 +93,7 @@ Thu Jun  5 11:13:20 2025
 [...]
 ```
 
-Umgebung vorbereiten (user):
+### Umgebung vorbereiten (user)
 
 ```bash
 git clone https://github.com/magenbrot/Feuerwehr-Versorgungs-Helfer.git
@@ -99,6 +101,19 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
+
+### Systemd Service einrichten
+
+Der Start der Applikationen soll über systemd erfolgen. Dazu sollten sie bereits läuffähig sein (also ein Python3 venv existieren und die benötigten Module installiert sein, siehe unten).
+
+- Die Dateien aus `installation/systemd` nach `/etc/systemd/system/` kopieren und anpassen.
+- Systemd reloaden `systemd daemon-reload`
+- Die beiden Services aktivieren: `systemd enable --now fvh-qrcode-reader.service; systemd enable --now fvh-nfc-reader.service`
+- Logfiles prüfen:
+  * `journalctl -u fvh-qrcode-reader.service`
+  * `journalctl -u fvh-nfc-reader.service`
+
+## Die Applikationen
 
 ### 1. QR-Code Leser (`qrcode_leser.py`) 📷
 
