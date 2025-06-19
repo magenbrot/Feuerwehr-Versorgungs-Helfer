@@ -179,6 +179,11 @@ def its_a_usercode(usercode):
         if  response.json().get('action') == 'locked':
             sound_ausgabe.sprich_text("error", f"{response.json()['message']}", sprache="de")
             return
+        new_saldo = int(response.json().get('saldo'))
+        if new_saldo == 0:
+            vorname = "Pumuckl"
+            sound_ausgabe.sprich_text("badumtss", f"Hallo {vorname}! Dein Kontostand beträgt momentan {new_saldo} €.", sprache="de")
+            return
         sound_ausgabe.sprich_text("plopp1", f"{response.json()['message']}", sprache="de")
         return
     if (aktion) == "k":
@@ -187,9 +192,6 @@ def its_a_usercode(usercode):
         if abfrage:
             nachname, vorname, saldo = abfrage
             logger.info("Der Saldo für %s %s ist %s €.", vorname, nachname, saldo)
-            if saldo == 0:
-                sound_ausgabe.sprich_text("badumtss", f"Hallo {vorname}! Dein Kontostand beträgt momentan {saldo} €.", sprache="de")
-                return
             sound_ausgabe.sprich_text("tagesschau", f"Hallo {vorname}! Dein Kontostand beträgt momentan {saldo} €.", sprache="de")
             return
     else:
