@@ -18,7 +18,7 @@ def _initialize_mixer():
     if not pygame.mixer.get_init():
         try:
             pygame.mixer.init()
-            logging.info("Pygame mixer initialisiert.")
+            logging.debug("Pygame mixer wurde initialisiert.")
         except pygame.error as e: # pylint: disable=no-member
             logging.error("Pygame-Mixer konnte nicht initialisiert werden: %s", e)
             raise  # Re-raise the exception to be caught by the main function
@@ -117,7 +117,7 @@ def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slo
         logging.info("Erzeuge TTS für: '%s'", text)
         tts = gTTS(text=text, lang=sprache, slow=slow)
         tts.save(temp_tts_filename)
-        logging.info("TTS gespeichert in %s", temp_tts_filename)
+        logging.debug("TTS gespeichert in %s", temp_tts_filename)
 
         play_sound_effect(sound_datei)
 
@@ -130,7 +130,7 @@ def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slo
 
         # Play the generated speech
         pygame.mixer.music.load(temp_tts_filename)
-        logging.info("Spiele TTS: %s", temp_tts_filename)
+        logging.info("Spiele TTS ab '%s' aus Datei %s", text, temp_tts_filename)
         pygame.mixer.music.play()
 
         # Wait for speech to finish
@@ -153,7 +153,7 @@ def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slo
         _cleanup_tts_resources(temp_tts_filename)
 
 if __name__ == "__main__":
-    play_sound_effect("kasse3.mp3")
+    play_sound_effect("beep1.mp3")
     # sprich_text("alarm", "Du hast kein Guthaben mehr, stell das Getränk zurück in den Schrank!", sprache="de")
-    # sprich_text("badumtss", "Dein Guthaben ist jetzt auf 0 €!", sprache="de")
+    sprich_text("badumtss", "Dein Guthaben ist jetzt auf 0 €!", sprache="de")
     # sprich_text("mario-victory", "Hat geklappt, lass es dir schmecken!", sprache="de")

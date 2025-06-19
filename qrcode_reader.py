@@ -182,11 +182,14 @@ def its_a_usercode(usercode):
         sound_ausgabe.sprich_text("plopp1", f"{response.json()['message']}", sprache="de")
         return
     if (aktion) == "k":
-        # Aktuelles Saldo anzeigen
+        # Personendaten und aktuelles Saldo holen
         abfrage = person_daten_lesen(code)
         if abfrage:
             nachname, vorname, saldo = abfrage
             logger.info("Der Saldo für %s %s ist %s €.", vorname, nachname, saldo)
+            if saldo == 0:
+                sound_ausgabe.sprich_text("badumtss", f"Hallo {vorname}! Dein Kontostand beträgt momentan {saldo} €.", sprache="de")
+                return
             sound_ausgabe.sprich_text("tagesschau", f"Hallo {vorname}! Dein Kontostand beträgt momentan {saldo} €.", sprache="de")
             return
     else:
