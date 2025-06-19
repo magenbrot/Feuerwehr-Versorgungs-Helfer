@@ -182,7 +182,7 @@ def its_a_usercode(usercode):
         new_saldo = int(response.json().get('saldo'))
         if new_saldo == 0:
             vorname = "Pumuckl"
-            sound_ausgabe.sprich_text("badumtss", f"Hallo {vorname}! Dein Kontostand beträgt momentan {new_saldo} €.", sprache="de")
+            sound_ausgabe.sprich_text("badumtss", f"Hallo {response.json().get('vorname')}! Dein Kontostand beträgt momentan {new_saldo} €.", sprache="de")
             return
         sound_ausgabe.sprich_text("plopp1", f"{response.json()['message']}", sprache="de")
         return
