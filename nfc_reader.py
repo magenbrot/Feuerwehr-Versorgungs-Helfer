@@ -240,12 +240,12 @@ def schalte_buzzer_ab(nfc_reader):
             if sw1 == 0x63 and sw2 == 0x00:
                 logger.warning("Laut API-Dokumentation: Operation fehlgeschlagen (Status Code 63 00h).")
     except NoCardException:
-        logger.warning("Es ist kein Token aufgelegt.")
+        logger.debug("Es ist kein Token aufgelegt.")
         time.sleep(0.2)
     except CardConnectionException as e:
         error_message = str(e)
         if "No smart card inserted" in error_message:
-            logger.warning("Es ist keine Karte aufgelegt: %s", e)
+            logger.debug("Es ist keine Karte aufgelegt: %s", e)
             time.sleep(0.2)
         else:
             logger.error("Fehler bei der Tokenverbindung: %s", e)

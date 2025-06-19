@@ -114,7 +114,7 @@ def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slo
 
     try:
         # Generate TTS
-        logging.info("Erzeuge TTS für: '%s'", text)
+        logging.debug("Erzeuge TTS für: '%s'", text)
         tts = gTTS(text=text, lang=sprache, slow=slow)
         tts.save(temp_tts_filename)
         logging.debug("TTS gespeichert in %s", temp_tts_filename)
