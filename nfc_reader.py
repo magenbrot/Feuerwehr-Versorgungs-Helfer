@@ -117,8 +117,10 @@ def person_transaktion_erstellen(token_hex: str) -> bool:
         if antwort_json.get('action') == 'block':
             sound_ausgabe.sprich_text("wah-wah", nachricht, sprache="de")
         else:
-            sound_ausgabe.sprich_text("plopp1", nachricht, sprache="de")
-
+            if int(antwort_json.get('saldo')) == 0:
+                sound_ausgabe.sprich_text("badumtss", nachricht, sprache="de")
+            else:
+                sound_ausgabe.sprich_text("plopp1", nachricht, sprache="de")
         erfolgreich = True
 
     except hr.requests.exceptions.RequestException as e:
