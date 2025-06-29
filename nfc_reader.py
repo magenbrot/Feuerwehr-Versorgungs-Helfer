@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Dieses Skript liest kontinuierlich NFC-Token von einem ACR122U-Reader,
 extrahiert ATS und ggf. UID und sendet diese an eine konfigurierte API, um eine

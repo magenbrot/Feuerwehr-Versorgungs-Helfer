@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """Liest QR-Codes über Webcam und agiert auf enhaltene Codes"""
 
 import logging
@@ -7,12 +5,11 @@ import sys
 import time
 import json
 import os
+from contextlib import redirect_stderr
 from dotenv import load_dotenv
 import cv2
-
 # import numpy as np # nur für optionale Visualisierung
 from pyzbar.pyzbar import decode
-
 import handle_requests as hr
 import sound_ausgabe
 
@@ -107,7 +104,9 @@ def qr_code_lesen(cap_video):
             letzter_inhalt = None  # Zurücksetzen, um neue Erkennung zu ermöglichen
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        decoded_objects = decode(gray)
+        with open(os.devnull, 'w', encoding='utf-8') as f:
+            with redirect_stderr(f):
+                decoded_objects = decode(gray)
 
         for obj in decoded_objects:
             qr_data = obj.data.decode('utf-8')
@@ -143,7 +142,6 @@ def werte_qr_code_aus(qr_code):
         qr_code (str): Der Inhalt des gelesenen QR-Codes.
     """
     # logger.info("Code gelesen: %s", qr_code)
-    system_beep_ascii()
     if (qr_code) == "39b3bca191be67164317227fec3bed":
         daten_alle = daten_lesen_alle()
         json_daten_ausgeben(daten_alle)
@@ -304,14 +302,6 @@ def person_transaktion_erstellen(code, beschreibung):
     if put_response:
         return put_response
     return None
-
-def system_beep_ascii():
-    """
-    Gibt einen Piepton aus.
-    """
-
-    print('\a', end='', flush=True)
-    time.sleep(0.1)  # kurze Pause, um den Ton hörbarer zu machen
 
 def exit_gracefully(cap_video=None):
     """
