@@ -80,11 +80,6 @@ Using reader plug'n play mechanism
 Scanning present readers...
 0: ACS ACR122U PICC Interface 00 00
 
-Thu Jun  5 11:13:14 2025
- Reader 0: ACS ACR122U PICC Interface 00 00
-  Event number: 0
-  Card state: Card removed,
-
 Thu Jun  5 11:13:20 2025
  Reader 0: ACS ACR122U PICC Interface 00 00
   Event number: 1
@@ -97,6 +92,7 @@ Thu Jun  5 11:13:20 2025
 
 ```bash
 git clone https://github.com/magenbrot/Feuerwehr-Versorgungs-Helfer.git
+cd Feuerwehr-Versorgungs-Helfer
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
