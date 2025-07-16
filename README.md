@@ -26,10 +26,6 @@ Die Anwendungen und Skripte dienen unterschiedlichen Zwecken:
 
 ### Umgebung vorbereiten (root)
 
-* `pcscd` `pcsc-tools` `libpcsclite-dev`: SmartCard Tools für Linux, notwendig für den USB NFC-Reader und das Python-Modul `pyscard`
-* `libgl1`: Für das Python-Modul `opencv-python`
-* `libzbar0` (bzw. `libzbar0t64` bei Armbian) : Für das Python-Modul `pyzbar`
-
 Für NFC-Kartenleser mit dem ACR122U Chipsatz ist es notwendig die Kernelmodule zu blockeren, die eventuell automatisch geladen werden und den korrekten Zugriff auf der Reader verhindern.
 
 Dazu müssen die Module in der Kernel Blacklist hinterlegt werden:
@@ -65,8 +61,14 @@ Jetzt können die Tools und weiteren Voraussetzungen installiert werden:
 
 ```bash
 apt update
-apt install pcscd pcsc-tools libpcsclite-dev libgl1 libzbar0t64 python3-dev
+apt install pcscd pcsc-tools libpcsclite-dev libgl1 libzbar0 python3-dev
 ```
+
+Folgende Pakete sind wichtig:
+
+* `pcscd` `pcsc-tools` `libpcsclite-dev`: SmartCard Tools für Linux, notwendig für den USB NFC-Reader und das Python-Modul `pyscard`
+* `libgl1`: Für das Python-Modul `opencv-python`
+* `libzbar0` (bzw. `libzbar0t64` bei Armbian) : Für das Python-Modul `pyzbar`
 
 ### Hardware testen
 
@@ -103,8 +105,8 @@ pip install -r requirements.txt
 Der Start der Applikationen soll über systemd erfolgen. Dazu sollten sie bereits läuffähig sein (also ein Python3 venv existieren und die benötigten Module installiert sein, siehe unten).
 
 * Die Dateien aus `installation/systemd` nach `/etc/systemd/system/` kopieren und anpassen.
-* Systemd reloaden `systemd daemon-reload`
-* Die beiden Services aktivieren: `systemd enable --now fvh-qrcode-reader.service; systemd enable --now fvh-nfc-reader.service`
+* Systemd reloaden `systemctl daemon-reload`
+* Die beiden Services aktivieren: `systemctl enable --now fvh-qrcode-reader.service; systemctl enable --now fvh-nfc-reader.service`
 * Logfiles prüfen:
   1. `journalctl -u fvh-qrcode-reader.service`
   2. `journalctl -u fvh-nfc-reader.service`
