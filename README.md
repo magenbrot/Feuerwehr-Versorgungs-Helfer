@@ -28,7 +28,7 @@ Die Anwendungen und Skripte dienen unterschiedlichen Zwecken:
 
 * `pcscd` `pcsc-tools` `libpcsclite-dev`: SmartCard Tools für Linux, notwendig für den USB NFC-Reader und das Python-Modul `pyscard`
 * `libgl1`: Für das Python-Modul `opencv-python`
-* `libzbar0t64`: Für das Python-Modul `pyzbar`
+* `libzbar0` (bzw. `libzbar0t64` bei Armbian) : Für das Python-Modul `pyzbar`
 
 Für NFC-Kartenleser mit dem ACR122U Chipsatz ist es notwendig die Kernelmodule zu blockeren, die eventuell automatisch geladen werden und den korrekten Zugriff auf der Reader verhindern.
 
