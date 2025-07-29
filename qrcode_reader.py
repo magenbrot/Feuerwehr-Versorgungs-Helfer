@@ -64,7 +64,7 @@ def json_daten_ausgeben(daten):
                 logger.info(log_message)
             else:
                 logger.error(
-                    "Fehler: Jeder Eintrag in der Liste sollte ein Dictionary sein.")
+                    "Fehler: Jeder Eintrag in der Liste sollte ein Dictionary sein")
                 return
         logger.info("-" * 40)
     elif isinstance(daten_obj, dict):
@@ -72,7 +72,7 @@ def json_daten_ausgeben(daten):
         logger.info(log_message)
     else:
         logger.error(
-            "Fehler: Die Eingabe sollte ein gültiger JSON-String oder eine Liste/Dictionary sein.")
+            "Fehler: Die Eingabe sollte ein gültiger JSON-String oder eine Liste/Dictionary sein")
         return
 
 def qr_code_lesen(cap_video):
@@ -179,7 +179,7 @@ def its_a_usercode(usercode):
             return
         new_saldo = int(response.json().get('saldo'))
         if new_saldo == 0:
-            sound_ausgabe.sprich_text("badumtss", f"Hallo {response.json().get('vorname')}! Dein Kontostand beträgt momentan {new_saldo} €.", sprache="de")
+            sound_ausgabe.sprich_text("badumtss", f"Hallo {response.json().get('vorname')}! Dein Kontostand beträgt momentan {new_saldo}€.", sprache="de")
             return
         sound_ausgabe.sprich_text("plopp1", f"{response.json()['message']}", sprache="de")
         return
@@ -188,11 +188,11 @@ def its_a_usercode(usercode):
         abfrage = person_daten_lesen(code)
         if abfrage:
             nachname, vorname, saldo = abfrage
-            logger.info("Der Saldo für %s %s ist %s €.", vorname, nachname, saldo)
-            sound_ausgabe.sprich_text("tagesschau", f"Hallo {vorname}! Dein Kontostand beträgt momentan {saldo} €.", sprache="de")
+            logger.info("Der Saldo für %s %s ist %s€.", vorname, nachname, saldo)
+            sound_ausgabe.sprich_text("tagesschau", f"Hallo {vorname}! Dein Kontostand beträgt momentan {saldo}€.", sprache="de")
             return
     else:
-        logger.error("Mit dem Code stimmt etwas nicht.")
+        logger.error("Mit dem QR-Code stimmt etwas nicht!")
         sound_ausgabe.sprich_text("error", "Mit deinem QR-Code stimmt etwas nicht. Bitte wende dich an deinen Administrator.", sprache="de")
         return
 
@@ -311,7 +311,7 @@ def exit_gracefully(cap_video=None):
         cap_video (cv2.VideoCapture): Das VideoCapture-Objekt der Kamera.
     """
 
-    logger.info('Räume auf und beende das Programm ordentlich.')
+    logger.info('Räume auf und beende das Programm ordentlich')
     if cap_video:
         cap_video.release()
         cv2.destroyAllWindows()
@@ -319,16 +319,16 @@ def exit_gracefully(cap_video=None):
 
 if __name__ == "__main__":
     if not api_url:
-        logger.critical("API_URL ist nicht in den Umgebungsvariablen definiert.")
+        logger.critical("API_URL ist nicht in den Umgebungsvariablen definiert")
         sys.exit(1)
     if not api_key:
-        logger.critical("API_KEY ist nicht in den Umgebungsvariablen definiert.")
+        logger.critical("API_KEY ist nicht in den Umgebungsvariablen definiert")
         sys.exit(1)
 
     try:
         health_status = healthcheck()
         if health_status is None:
-            logger.critical("Healthcheck fehlgeschlagen. Beende Skript.")
+            logger.critical("Healthcheck fehlgeschlagen. Beende Skript")
             sys.exit(1)
 
         version = get_api_version()
