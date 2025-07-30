@@ -38,7 +38,7 @@ blacklist pn533_usb
 EOF
 ```
 
-Danach den initramfs aktualisieren: `sudo update-initramfs -u` (bei Debian/Ubuntu) oder `sudo dracut -f` (bei Fedora/CentOS) und neu starten (alternativ die Module mit `modprobe -r` entladen).
+Danach den initramfs aktualisieren: `sudo update-initramfs -k all -u` (bei Debian/Ubuntu) oder `sudo dracut -f` (bei Fedora/CentOS) und neu starten (alternativ die Module mit `modprobe -r` entladen).
 
 Jetzt muss ggf. noch eine Regel für das Policy Kit hinzugefügt werden (z.B. bei Ubuntu), damit der Benutzer auch auf den NFC-Reader zugreifen darf.
 
@@ -61,11 +61,12 @@ Jetzt können die Tools und weiteren Voraussetzungen installiert werden:
 
 ```bash
 apt update
-apt install pcscd pcsc-tools libpcsclite-dev libgl1 libzbar0 python3-dev
+apt install libacsccid1 pcscd pcsc-tools libpcsclite-dev libgl1 libzbar0 python3-dev
 ```
 
 Folgende Pakete sind wichtig:
 
+* `libacsccid1`: Eine Library zur Unterstützung von NFC-Readern mit dem ACS ACR122U (oder ähnlichen) Chipsätzen
 * `pcscd` `pcsc-tools` `libpcsclite-dev`: SmartCard Tools für Linux, notwendig für den USB NFC-Reader und das Python-Modul `pyscard`
 * `libgl1`: Für das Python-Modul `opencv-python`
 * `libzbar0` (bzw. `libzbar0t64` bei Armbian) : Für das Python-Modul `pyzbar`
