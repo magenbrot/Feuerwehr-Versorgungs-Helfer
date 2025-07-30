@@ -13,7 +13,7 @@ Die Anwendungen und Skripte dienen unterschiedlichen Zwecken:
 
 ## Allgemeine Voraussetzungen 🛠️
 
-* Python 3.x
+* Python 3.11+
 * Eine funktionierende Instanz des [Feuerwehr-Versorgungs-Helfer Backends](https://github.com/magenbrot/Feuerwehr-Versorgungs-Helfer-API)
 * Eine `.env`-Datei im Stammverzeichnis dieses Projekts mit folgenden Umgebungsvariablen:
   * `API_URL`: Die vollständige URL zum API-Endpunkt des Backends (z.B. `http://localhost:5000`).
