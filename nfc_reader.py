@@ -346,26 +346,27 @@ if __name__ == "__main__":
         if not reader_list:
             logger.critical("Keine PC/SC-Reader gefunden.")
             sys.exit()
-
-        # deaktiviert, nützlich für Debugging
-        # logger.info("Verfügbare Reader: %s", reader_list)
+        logger.info("Verfügbare Reader: %s", reader_list)
 
         version = get_api_version()
         logger.info("Bereitschaft (Version %s).", version)
 
-        ACR122U_READER = None
+        ACR_READER = None
         for reader in reader_list:
             if "ACR122U" in str(reader):
-                ACR122U_READER = reader
+                ACR_READER = reader
+                break
+            if "ACR1252" in str(reader):
+                ACR_READER = reader
                 break
 
-        if ACR122U_READER:
+        if ACR_READER:
             if disable_buzzer:
                 logger.info("Deaktiviere Buzzer...")
-                schalte_buzzer_ab(ACR122U_READER)
-            lies_nfc_kontinuierlich(ACR122U_READER)
+                schalte_buzzer_ab(ACR_READER)
+            lies_nfc_kontinuierlich(ACR_READER)
         else:
-            logger.critical("ACR122U Reader nicht gefunden.")
+            logger.critical("Kein kompatibler Reader gefunden.")
 
     except NoReadersException as e:
         logger.critical("Fehler: %s", e)
