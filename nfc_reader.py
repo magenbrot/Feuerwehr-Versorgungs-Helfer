@@ -353,10 +353,7 @@ if __name__ == "__main__":
 
         ACR_READER = None
         for reader in reader_list:
-            if "ACR122U" in str(reader):
-                ACR_READER = reader
-                break
-            if "ACR1252" in str(reader):
+            if "ACR122U" in str(reader) or "ACR1252" in str(reader):
                 ACR_READER = reader
                 break
 
@@ -364,6 +361,7 @@ if __name__ == "__main__":
             if disable_buzzer:
                 logger.info("Deaktiviere Buzzer...")
                 schalte_buzzer_ab(ACR_READER)
+            # Starte Leseschleife
             lies_nfc_kontinuierlich(ACR_READER)
         else:
             logger.critical("Kein kompatibler Reader gefunden.")
