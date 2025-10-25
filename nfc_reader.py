@@ -351,18 +351,18 @@ if __name__ == "__main__":
         version = get_api_version()
         logger.info("Bereitschaft (Version %s).", version)
 
-        ACR_READER = None
+        acr_reader = None
         for reader in reader_list:
             if "ACR122U" in str(reader) or "ACR1252" in str(reader):
-                ACR_READER = reader
+                acr_reader = reader
                 break
 
-        if ACR_READER:
+        if acr_reader:
             if disable_buzzer:
                 logger.info("Deaktiviere Buzzer...")
-                schalte_buzzer_ab(ACR_READER)
+                schalte_buzzer_ab(acr_reader)
             # Starte Leseschleife
-            lies_nfc_kontinuierlich(ACR_READER)
+            lies_nfc_kontinuierlich(acr_reader)
         else:
             logger.critical("Kein kompatibler Reader gefunden.")
 
