@@ -61,7 +61,7 @@ Jetzt können die Tools und weiteren Voraussetzungen installiert werden:
 
 ```bash
 apt update
-apt install libacsccid1 pcscd pcsc-tools libpcsclite-dev libgl1 libzbar0 python3-dev
+apt install git libacsccid1 pcscd pcsc-tools libpcsclite-dev libgl1 libzbar0 python3-dev
 ```
 
 Folgende Pakete sind wichtig:
