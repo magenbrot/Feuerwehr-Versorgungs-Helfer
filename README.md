@@ -13,6 +13,8 @@ Die Anwendungen und Skripte dienen unterschiedlichen Zwecken:
 
 ## Allgemeine Voraussetzungen 🛠️
 
+* Eine kompatible Plattform. Die App wurde ausführlich mit dem RasperryPi 5 getestet
+* Einen kompatiblen Lautsprecher, z.B. via USB oder ein Bildschirm mit HDMI
 * Python 3.11+
 * Eine funktionierende Instanz des [Feuerwehr-Versorgungs-Helfer Backends](https://github.com/magenbrot/Feuerwehr-Versorgungs-Helfer-API)
 * Eine `.env`-Datei im Stammverzeichnis dieses Projekts mit folgenden Umgebungsvariablen:
