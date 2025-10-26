@@ -1,5 +1,5 @@
 """
-Dieses Skript liest kontinuierlich NFC-Token von einem ACR122U-Reader,
+Diese App liest kontinuierlich NFC-Token von einem ACR122U-Reader,
 extrahiert ATS und ggf. UID und sendet diese an eine konfigurierte API, um eine
 Transaktion zu erstellen. Die API-URL und der API-Schlüssel werden aus
 Umgebungsvariablen (.env-Datei) geladen.
@@ -351,7 +351,7 @@ if __name__ == "__main__":
         version = get_api_version()
         logger.info("Bereitschaft (Version %s).", version)
 
-        acr_reader = None
+        acr_reader = None  # pylint: disable=C0103
         for reader in reader_list:
             if "ACR122U" in str(reader) or "ACR1252" in str(reader):
                 acr_reader = reader
