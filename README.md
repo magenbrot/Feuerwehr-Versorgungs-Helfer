@@ -13,6 +13,15 @@ Die Anwendungen und Skripte dienen unterschiedlichen Zwecken:
 
 ## Allgemeine Voraussetzungen 🛠️
 
+### Hardware
+
+* Eine kompatible Hardware-Plattform. Die App wurde ausführlich mit dem RasperryPi 5 getestet
+* Eine kompatible Kamera, z.B. eine USB-Kamera 720p von Logitech
+* Einen kompatiblen NFC-Kartenleser, unterstützt werden die Chips ACR122U oder ACR1252U
+* Einen kompatiblen Lautsprecher, z.B. via USB oder ein Bildschirm mit HDMI
+
+### Software
+
 * Python 3.11+
 * Eine funktionierende Instanz des [Feuerwehr-Versorgungs-Helfer Backends](https://github.com/magenbrot/Feuerwehr-Versorgungs-Helfer-API)
 * Eine `.env`-Datei im Stammverzeichnis dieses Projekts mit folgenden Umgebungsvariablen:
@@ -61,7 +70,7 @@ Jetzt können die Tools und weiteren Voraussetzungen installiert werden:
 
 ```bash
 apt update
-apt install libacsccid1 pcscd pcsc-tools libpcsclite-dev libgl1 libzbar0 python3-dev
+apt install git libacsccid1 pcscd pcsc-tools libpcsclite-dev libgl1 libzbar0 python3-dev
 ```
 
 Folgende Pakete sind wichtig:
