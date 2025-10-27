@@ -5,6 +5,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
+
 def delete_request(url, headers=None):
     """
     Führt einen DELETE-Request an die angegebene URL aus.
@@ -38,7 +39,7 @@ def get_request(url, headers=None, params=None):
     """
     try:
         response = requests.get(url, headers=headers, params=params, timeout=10)
-        response.raise_for_status() # Wirft eine Exception für fehlerhafte Statuscodes
+        response.raise_for_status()  # Wirft eine Exception für fehlerhafte Statuscodes
         return response
     except requests.exceptions.RequestException as e:
         logger.error("Fehler beim GET-Request an %s: %s", url, e)

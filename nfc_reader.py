@@ -36,6 +36,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 def healthcheck():
     """
     Healthcheck gegen API ausführen.
@@ -54,6 +55,7 @@ def healthcheck():
         return get_response.json()
     return None
 
+
 def get_api_version():
     """
     API nach aktueller Version fragen.
@@ -71,6 +73,7 @@ def get_api_version():
     if get_response:
         return get_response.json().get('version')
     return None
+
 
 def person_transaktion_erstellen(token_hex: str) -> bool:
     """
@@ -144,6 +147,7 @@ def person_transaktion_erstellen(token_hex: str) -> bool:
 
     return erfolgreich
 
+
 def lese_nfc_token_uid(connection):
     """
     Liest die UID von dem Token.
@@ -165,6 +169,7 @@ def lese_nfc_token_uid(connection):
     except Exception as e:  # pylint: disable=W0718
         logger.error("Fehler beim Lesen der Token-UID: %s", e)
         return None
+
 
 def lese_nfc_token_ats(connection):
     """
@@ -188,6 +193,7 @@ def lese_nfc_token_ats(connection):
         logger.error("Fehler beim Lesen des Token-ATS: %s", e)
         return None
 
+
 def verarbeite_token(token_hex, last_token_time):
     """
     Verarbeitet den gelesenen Token.
@@ -206,13 +212,12 @@ def verarbeite_token(token_hex, last_token_time):
         # beep sound wenn Token gescannt wurde
         sound_ausgabe.play_sound_effect("beep1")
         transaktion_erfolgreich = person_transaktion_erstellen(token_hex)
-        #saldo_ausgeben_erfolgreich = person_daten_lesen(token_hex)
-        #if transaktion_erfolgreich and saldo_ausgeben_erfolgreich:
         if transaktion_erfolgreich:
             return jetzt  # Aktualisiere den Zeitstempel
         return None
     logger.info("Token %s wurde kürzlich verarbeitet. Ignoriere.", token_hex)
     return last_token_time
+
 
 def schalte_buzzer_ab(nfc_reader):
     """
@@ -258,6 +263,7 @@ def schalte_buzzer_ab(nfc_reader):
             except Exception:  # pylint: disable=W0718 # nosec B110
                 pass  # Fehler beim Trennen sind nicht kritisch
 
+
 def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
     """
     Startet eine kontinuierliche NFC-Leseschleife für den angegebenen Reader.
@@ -293,13 +299,13 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
 
                 ats_hex = lese_nfc_token_ats(connection)
                 if ats_hex:
-                    #logger.info("ATS gefunden.")
+                    # logger.info("ATS gefunden.")
                     last_token_time = verarbeite_token(ats_hex, last_token_time)
                 else:
-                    #logger.info("Kein ATS gefunden.")
+                    # logger.info("Kein ATS gefunden.")
                     uid_hex = lese_nfc_token_uid(connection)
                     if uid_hex:
-                        #logger.info("UID gefunden.")
+                        # logger.info("UID gefunden.")
                         last_token_time = verarbeite_token(uid_hex, last_token_time)
 
                 if not ats_hex and not uid_hex:
@@ -311,13 +317,13 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
                 error_message = str(e)
                 if "No smart card inserted" in error_message:
                     if last_token_time is not None:
-                        last_token_time = None # Setze Zeit zurück, wenn kein Token mehr da
+                        last_token_time = None  # Setze Zeit zurück, wenn kein Token mehr da
                     time.sleep(0.2)
                 else:
                     logger.critical("Fehler bei der Tokenverbindung: %s", e)
                     time.sleep(0.2)
-            except Exception:  # pylint: disable=W0718
-                #logger.warning(f"Unerwarteter Fehler in der Leseschleife: {e}")
+            except Exception as e:  # pylint: disable=W0718
+                logger.warning("Unerwarteter Fehler in der Leseschleife: %s", e)
                 time.sleep(0.2)
             finally:
                 if connection:
@@ -330,6 +336,7 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
         logger.info("NFC-Leser wird durch Benutzer beendet.")
     finally:
         logger.info("NFC-Leser beendet.")
+
 
 if __name__ == "__main__":
     if not api_url or not api_key:

@@ -14,8 +14,8 @@ import handle_requests as hr
 import sound_ausgabe
 
 load_dotenv()
-api_url=os.environ.get("API_URL")
-api_key=os.environ.get("API_KEY")
+api_url = os.environ.get("API_URL")
+api_key = os.environ.get("API_KEY")
 my_name = os.environ.get("MY_NAME")
 camera_index = int(os.environ.get("CAMERA_INDEX"))
 log_level = os.getenv('LOG_LEVEL', 'INFO')
@@ -28,6 +28,7 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
 
 def json_daten_ausgeben(daten):
     """
@@ -74,6 +75,7 @@ def json_daten_ausgeben(daten):
         logger.error(
             "Fehler: Die Eingabe sollte ein gültiger JSON-String oder eine Liste/Dictionary sein")
         return
+
 
 def qr_code_lesen(cap_video):
     """
@@ -134,6 +136,7 @@ def qr_code_lesen(cap_video):
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     break
 
+
 def werte_qr_code_aus(qr_code):
     """
     Führt Code entsprechend der Anweisung auf dem QR-Code aus.
@@ -151,6 +154,7 @@ def werte_qr_code_aus(qr_code):
         else:
             logger.warning("Unbekannter Code: %s", qr_code)
 
+
 def its_a_usercode(usercode):
     """
     Wenn es sich um einen Benutzercode handelt wird entsprechend der Aktion verfahren.
@@ -159,8 +163,8 @@ def its_a_usercode(usercode):
         usercode (str): Der gelesene Benutzercode.
     """
 
-    code = usercode[:10] # die ersten 10 Stellen des usercodes sind dem Benutzer zugeordnet
-    aktion = usercode[-1] # letztes Zeichen im usercode bestimmt die auszuführende Aktion
+    code = usercode[:10]  # die ersten 10 Stellen des usercodes sind dem Benutzer zugeordnet
+    aktion = usercode[-1]  # letztes Zeichen im usercode bestimmt die auszuführende Aktion
     beschreibung = my_name
 
     logger.info("Benutzer: %s - Aktion: %s.", code, aktion)
@@ -174,7 +178,7 @@ def its_a_usercode(usercode):
         if response.json().get('action') == 'block':
             sound_ausgabe.sprich_text("wah-wah", f"{response.json()['message']}", sprache="de")
             return
-        if  response.json().get('action') == 'locked':
+        if response.json().get('action') == 'locked':
             sound_ausgabe.sprich_text("error", f"{response.json()['message']}", sprache="de")
             return
         new_saldo = int(response.json().get('saldo'))
@@ -196,6 +200,7 @@ def its_a_usercode(usercode):
         sound_ausgabe.sprich_text("error", "Mit deinem QR-Code stimmt etwas nicht. Bitte wende dich an deinen Administrator.", sprache="de")
         return
 
+
 def healthcheck():
     """
     Healthcheck gegen API ausführen.
@@ -213,6 +218,7 @@ def healthcheck():
     if get_response:
         return get_response.json()
     return None
+
 
 def get_api_version():
     """
@@ -232,6 +238,7 @@ def get_api_version():
         return get_response.json().get('version')
     return None
 
+
 def daten_lesen_alle():
     """
     Daten aller Benutzer anzeigen.
@@ -249,6 +256,7 @@ def daten_lesen_alle():
     if get_response:
         return get_response.json()
     return None
+
 
 def person_daten_lesen(code):
     """
@@ -277,6 +285,7 @@ def person_daten_lesen(code):
         return (person_daten['nachname'], person_daten['vorname'], person_daten['saldo'])
     return None
 
+
 def person_transaktion_erstellen(code, beschreibung):
     """
     Transaktion für eine Person ausführen.
@@ -303,6 +312,7 @@ def person_transaktion_erstellen(code, beschreibung):
         return put_response
     return None
 
+
 def exit_gracefully(cap_video=None):
     """
     Räume auf und beende das Programm ordentlich.
@@ -316,6 +326,7 @@ def exit_gracefully(cap_video=None):
         cap_video.release()
         cv2.destroyAllWindows()
     sys.exit(0)
+
 
 if __name__ == "__main__":
     if not api_url:
