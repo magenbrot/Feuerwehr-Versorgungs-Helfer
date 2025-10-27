@@ -88,6 +88,7 @@ def qr_code_lesen(cap_video):
     letzter_inhalt = None
     wartezeit_aktiv = False
     wartezeit_start = 0
+    wartezeit_dauer = 5  # in Sekunden
 
     while True:
         ret, frame = cap_video.read()
@@ -95,28 +96,31 @@ def qr_code_lesen(cap_video):
             logger.error("Frame konnte nicht gelesen werden!")
             break
 
-        if wartezeit_aktiv and (time.time() - wartezeit_start < 5):
-            # Videobild als Fenster öffnen
-            # cv2.imshow('QR-Code Scanner', frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-            continue  # Überspringe die QR-Code-Erkennung während der Wartezeit
+        # Prüfen, ob die Wartezeit (Cooldown) noch aktiv ist
         if wartezeit_aktiv:
-            wartezeit_aktiv = False
-            letzter_inhalt = None  # Zurücksetzen, um neue Erkennung zu ermöglichen
+            if time.time() - wartezeit_start >= wartezeit_dauer:
+                # Wartezeit abgelaufen
+                wartezeit_aktiv = False
+                letzter_inhalt = None  # Zurücksetzen, um neue Erkennung zu ermöglichen
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        with open(os.devnull, 'w', encoding='utf-8') as f:
-            with redirect_stderr(f):
-                decoded_objects = decode(gray)
+        # QR-Code nur dekodieren, wenn keine Wartezeit aktiv ist
+        if not wartezeit_aktiv:
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            with open(os.devnull, 'w', encoding='utf-8') as f:
+                with redirect_stderr(f):
+                    decoded_objects = decode(gray)
 
-        for obj in decoded_objects:
-            qr_data = obj.data.decode('utf-8')
-            if qr_data != letzter_inhalt:
-                werte_qr_code_aus(str(qr_data))
-                letzter_inhalt = qr_data
-                wartezeit_aktiv = True
-                wartezeit_start = time.time()
+            for obj in decoded_objects:
+                qr_data = obj.data.decode('utf-8')
+                if qr_data != letzter_inhalt:
+                    werte_qr_code_aus(str(qr_data))
+                    letzter_inhalt = qr_data
+                    wartezeit_aktiv = True
+                    wartezeit_start = time.time()
+
+                    # Breche die 'for'-Schleife ab, sobald ein Code gefunden wurde,
+                    # um direkt in die Wartezeit zu gehen.
+                    break
 
                 # # Optionale Visualisierung
                 # points = obj.polygon
@@ -132,9 +136,11 @@ def qr_code_lesen(cap_video):
         # Videobild als Fenster öffnen
         # cv2.imshow('QR-Code Scanner', frame)
 
-        # Abbruch mit Taste q
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #     break
+        # Warte 1ms, dies drosselt die Schleife und verhindert 100% CPU-Last.
+        # Es ermöglicht auch das Abfangen der 'q'-Taste zum Beenden.
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            logger.info("Taste 'q' gedrückt, Schleife wird beendet.")
+            break
 
 
 def werte_qr_code_aus(qr_code):
