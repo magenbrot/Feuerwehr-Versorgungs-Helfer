@@ -12,6 +12,7 @@ from gtts.tts import gTTSError
 
 logger = logging.getLogger(__name__)
 
+
 def _initialize_mixer():
     """Initializes pygame.mixer if not already initialized."""
 
@@ -19,9 +20,10 @@ def _initialize_mixer():
         try:
             pygame.mixer.init()
             logging.debug("Pygame mixer wurde initialisiert.")
-        except pygame.error as e: # pylint: disable=no-member
+        except pygame.error as e:  # pylint: disable=no-member
             logging.error("Pygame-Mixer konnte nicht initialisiert werden: %s", e)
             raise  # Re-raise the exception to be caught by the main function
+
 
 def play_sound_effect(sound_datei_name: str | None) -> bool:
     """
@@ -70,6 +72,7 @@ def play_sound_effect(sound_datei_name: str | None) -> bool:
         logging.error("Unerwarteter Fehler in play_sound_effect: %s", e, exc_info=True)
         return False  # Fehler explizit zurückgeben
 
+
 def _cleanup_tts_resources(filename: str | None = None) -> None:
     """
     Stoppt den Pygame-Mixer und entfernt optional die TTS-Ausgabedatei.
@@ -99,6 +102,7 @@ def _cleanup_tts_resources(filename: str | None = None) -> None:
         except OSError as e:
             logging.error("Fehler beim Löschen der temporären TTS-Datei '%s': %s", filename, e)
 
+
 def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slow=False):
     """
     Synthetisiert den übergebenen Text in Sprache und spielt ihn über Pygame ab.
@@ -124,7 +128,7 @@ def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slo
         if not pygame.mixer.get_init():
             try:
                 _initialize_mixer()
-            except pygame.error: # pylint: disable=no-member
+            except pygame.error:  # pylint: disable=no-member
                 logging.error("Ich kann ohne pygame mixer nicht fortfahren.")
                 return
 
@@ -140,7 +144,7 @@ def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slo
 
     except gTTSError as e:
         logging.error("gTTS Error: %s", e)
-    except pygame.error as e: # pylint: disable=no-member
+    except pygame.error as e:  # pylint: disable=no-member
         # This will catch errors from mixer.init, music.load, music.play
         logging.error("Pygame Fehler während der TTS Wiedergabe: %s", e)
     except IOError as e:
@@ -151,6 +155,7 @@ def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slo
     finally:
         # Cleanup resources regardless of success or failure
         _cleanup_tts_resources(temp_tts_filename)
+
 
 if __name__ == "__main__":
     play_sound_effect("beep1.mp3")
