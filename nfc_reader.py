@@ -323,7 +323,7 @@ def lies_nfc_kontinuierlich(nfc_reader):  # pylint: disable=R0912
                     logger.critical("Fehler bei der Tokenverbindung: %s", e)
                     time.sleep(0.2)
             except Exception as e:  # pylint: disable=W0718
-                logger.warning("Unerwarteter Fehler in der Leseschleife: %s", e)
+                logger.debug("Unerwarteter Fehler in der Leseschleife: %s", e)  # als DEBUG, da auch bei nicht aufgelegter Karte ein Fehler geloggt wird
                 time.sleep(0.2)
             finally:
                 if connection:
