@@ -100,6 +100,48 @@ Thu Jun  5 11:13:20 2025
 [...]
 ```
 
+#### Soundausgabe konfigurieren
+
+##### via HDMI
+
+Die Soundausgabe via HDMI hat auf dem RaspberryPi 5 ohne weitere Änderungen direkt funktioniert. Die Funktion kann über den direkten Aufruf des Scripts `python3 sound_ausgabe.py` getestet werden (venv aktivieren nicht vergessen).
+
+##### via USB-Lautsprecher
+
+Für die Soundausgabe via USB-Lautsprecher musste ich auf dem RaspberryPi 5 die VC4 Treiber deaktivieren und Alsamixer konfigurieren.
+
+In der `/boot/firmware/config.txt` diese beiden Einträge anpassen:
+```
+# Enable audio (loads snd_bcm2835)
+dtparam=audio=off
+
+# Enable DRM VC4 V3D driver
+dtoverlay=vc4-kms-v3d,noaudio
+```
+
+Die Datei `/etc/asound.conf` mit folgendem Inhalt anlegen:
+```
+pcm.!default {
+    type hw
+    card 1
+}
+ 
+ctl.!default {
+    type hw           
+    card 1
+}
+```
+
+Danach muss das System einmal rebootet werden.
+
+##### Lautstärke einstellen
+
+zum Beispiel auf 80% setzen:
+```
+amixer set 'PCM' 80%
+```
+Die Lautstärke kann über den direkten Aufruf des Scripts `python3 sound_ausgabe.py` getestet werden (venv aktivieren nicht vergessen).
+
 ### Umgebung vorbereiten (user)
 
 ```bash
