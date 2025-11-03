@@ -2,6 +2,8 @@
 Description=Feuerwehr-Versorgungs-Helfer NFC Reader
 After=network.target
 After=pcscd.service
+InitialStartLimitSec=30s
+StartLimitBurst=1
 
 [Service]
 Type=simple
