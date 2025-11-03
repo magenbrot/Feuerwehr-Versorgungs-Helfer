@@ -1,8 +1,6 @@
 [Unit]
 Description=Feuerwehr-Versorgungs-Helfer QR-Code Reader
 After=network.target
-InitialStartLimitSec=30s
-StartLimitBurst=1
 
 [Service]
 Type=simple
@@ -10,6 +8,7 @@ User=<user>
 Group=<group>
 WorkingDirectory=/home/<user>/Feuerwehr-Versorgungs-Helfer
 Environment="PATH=/home/<user>/Feuerwehr-Versorgungs-Helfer/venv/bin"
+ExecStartPre=/bin/sleep 30
 ExecStart=python3 /home/<user>/Feuerwehr-Versorgungs-Helfer/qrcode_reader.py
 Restart=on-failure
 
