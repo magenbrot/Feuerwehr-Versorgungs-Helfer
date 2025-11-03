@@ -2,8 +2,6 @@
 Description=Feuerwehr-Versorgungs-Helfer NFC Reader
 After=network.target
 After=pcscd.service
-InitialStartLimitSec=30s
-StartLimitBurst=1
 
 [Service]
 Type=simple
@@ -11,6 +9,7 @@ User=<user>
 Group=<group>
 WorkingDirectory=/home/<user>/Feuerwehr-Versorgungs-Helfer
 Environment="PATH=/home/<user>/Feuerwehr-Versorgungs-Helfer/venv/bin"
+ExecStartPre=/bin/sleep 30
 ExecStart=python3 /home/<user>/Feuerwehr-Versorgungs-Helfer/nfc_reader.py
 Restart=on-failure
 
