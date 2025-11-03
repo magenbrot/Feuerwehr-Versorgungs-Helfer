@@ -4,7 +4,7 @@ gTTS==2.5.4
 opencv-python==4.12.0.88
 pillow==12.0.0
 pygame==2.6.1
-pyscard==2.3.0
+pyscard==2.3.1
 python-dotenv==1.2.1
 pyzbar==0.1.9
 qrcode==8.2
