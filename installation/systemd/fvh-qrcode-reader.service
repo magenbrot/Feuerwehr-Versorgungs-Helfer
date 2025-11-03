@@ -1,6 +1,8 @@
 [Unit]
 Description=Feuerwehr-Versorgungs-Helfer QR-Code Reader
 After=network.target
+InitialStartLimitSec=30s
+StartLimitBurst=1
 
 [Service]
 Type=simple
