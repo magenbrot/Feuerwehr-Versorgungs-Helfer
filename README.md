@@ -9,7 +9,7 @@ Dieses Repository enthält Client-Anwendungen (Terminals) für das digitale Stri
 Die Anwendungen und Skripte dienen unterschiedlichen Zwecken:
 
 * **QR-Code Leser (`qrcode_leser.py`)**: Verwendet eine angeschlossene Webcam, um spezielle QR-Codes zu erkennen und Aktionen auszulösen.
-* **NFC-Leser (`nfc_reader.py`)**: Verwendet einen ACR122U NFC-Kartenleser, um NFC-Tokens (Karten, Anhänger, Smartphones) zu erkennen und Transaktionen zu starten. Der Code ist eventuell auch mit anderen USB-NFC-Readern kompatibel.
+* **NFC-Leser (`nfc_reader.py`)**: Verwendet einen ACR122U/ACR1252U NFC-Kartenleser, um NFC-Tokens (Karten, Anhänger, Smartphones) zu erkennen und Transaktionen zu starten. Der Code ist eventuell auch mit anderen USB-NFC-Readern kompatibel.
 
 ## Allgemeine Voraussetzungen 🛠️
 
