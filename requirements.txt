@@ -2,11 +2,11 @@
 
 gTTS==2.5.4
 opencv-python==4.13.0.92
-pillow==12.1.1
+pillow==12.2.0
 pygame==2.6.1
 pyscard==2.3.1
 python-dotenv==1.2.2
 pyzbar==0.1.9
 qrcode==8.2
 requests==2.33.1
-Werkzeug==3.1.6
+Werkzeug==3.1.8
