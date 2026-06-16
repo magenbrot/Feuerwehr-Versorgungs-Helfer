@@ -189,7 +189,7 @@ def its_a_usercode(usercode):
             return
         new_saldo = int(response.json().get('saldo'))
         if new_saldo == 0:
-            sound_ausgabe.sprich_text("zero_balance", f"Hallo {response.json().get('vorname')}! Dein Kontostand beträgt momentan {new_saldo}€.", sprache="de")
+            sound_ausgabe.sprich_text("zero_balance", f"Grüße {response.json().get('vorname')}! Dein Kontostand beträgt momentan {new_saldo}€.", sprache="de")
             return
         sound_ausgabe.sprich_text("success", f"{response.json()['message']}", sprache="de")
         return
@@ -199,7 +199,7 @@ def its_a_usercode(usercode):
         if abfrage:
             nachname, vorname, saldo = abfrage
             logger.info("Der Saldo für %s %s ist %s€.", vorname, nachname, saldo)
-            sound_ausgabe.sprich_text("info", f"Hallo {vorname}! Dein Kontostand beträgt momentan {saldo}€.", sprache="de")
+            sound_ausgabe.sprich_text("info", f"Grüße {vorname}! Dein Kontostand beträgt momentan {saldo}€.", sprache="de")
             return
     else:
         logger.error("Mit dem QR-Code stimmt etwas nicht!")

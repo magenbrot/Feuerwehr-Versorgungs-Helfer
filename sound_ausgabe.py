@@ -7,9 +7,16 @@ from contextlib import redirect_stdout
 from io import StringIO
 with redirect_stdout(StringIO()):
     import pygame
-from gtts import gTTS
-from gtts.tts import gTTSError
+import asyncio
+import edge_tts
 from dotenv import load_dotenv
+
+DEFAULT_VOICES = {
+    "de": "de-DE-KillianNeural",
+    "en": "en-US-AvaNeural",
+    "fr": "fr-FR-VivienneNeural",
+    "es": "es-ES-AlvaroNeural",
+}
 
 # Environment configuration laden
 load_dotenv()
@@ -127,6 +134,12 @@ def _cleanup_tts_resources(filename: str | None = None) -> None:
             logging.error("Fehler beim Löschen der temporären TTS-Datei '%s': %s", filename, e)
 
 
+async def _generate_tts_edge(text: str, voice: str, rate: str, filename: str) -> None:
+    """Helper-Funktion, um mit edge-tts Audio zu generieren."""
+    communicate = edge_tts.Communicate(text, voice, rate=rate)
+    await communicate.save(filename)
+
+
 def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slow=False):
     """
     Synthetisiert den übergebenen Text in Sprache und spielt ihn über Pygame ab.
@@ -141,10 +154,16 @@ def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slo
     temp_tts_filename = "output.mp3"
 
     try:
-        # Generate TTS
-        logging.debug("Erzeuge TTS für: '%s'", text)
-        tts = gTTS(text=text, lang=sprache, slow=slow)
-        tts.save(temp_tts_filename)
+        # Bestimme die neuronale Stimme
+        voice = os.getenv("TTS_VOICE")
+        if not voice:
+            voice = DEFAULT_VOICES.get(sprache, "de-DE-KillianNeural")
+
+        rate = "-20%" if slow else "+0%"
+
+        # Generiere das Audio via edge-tts (asynchroner Aufruf synchron ausgeführt)
+        logging.debug("Erzeuge TTS für: '%s' mit Stimme %s", text, voice)
+        asyncio.run(_generate_tts_edge(text, voice, rate, temp_tts_filename))
         logging.debug("TTS gespeichert in %s", temp_tts_filename)
 
         play_sound_effect(sound_datei)
@@ -166,13 +185,11 @@ def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slo
             pygame.time.Clock().tick(10)
         logging.debug("TTS abspielen beendet.")
 
-    except gTTSError as e:
-        logging.error("gTTS Error: %s", e)
     except pygame.error as e:  # pylint: disable=no-member
         # This will catch errors from mixer.init, music.load, music.play
         logging.error("Pygame Fehler während der TTS Wiedergabe: %s", e)
     except IOError as e:
-        # This could be from tts.save()
+        # This could be from saving the file
         logging.error("IO Fehler (z.B. speichern von '%s'): %s", temp_tts_filename, e)
     except Exception as e:  # pylint: disable=W0718
         logging.error("Ein unerwarteter Fehler bei sprich_text ist aufgetreten: %s", e, exc_info=True)
