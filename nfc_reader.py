@@ -116,12 +116,12 @@ def person_transaktion_erstellen(token_hex: str) -> bool:
         nachricht = antwort_json.get('message', 'Aktion erfolgreich.')
 
         if antwort_json.get('action') == 'block':
-            sound_ausgabe.sprich_text("wah-wah", nachricht, sprache="de")
+            sound_ausgabe.sprich_text("blocked", nachricht, sprache="de")
         else:
             if int(antwort_json.get('saldo')) == 0:
-                sound_ausgabe.sprich_text("badumtss", nachricht, sprache="de")
+                sound_ausgabe.sprich_text("zero_balance", nachricht, sprache="de")
             else:
-                sound_ausgabe.sprich_text("plopp1", nachricht, sprache="de")
+                sound_ausgabe.sprich_text("success", nachricht, sprache="de")
         erfolgreich = True
 
     except hr.requests.exceptions.RequestException as e:
@@ -132,7 +132,7 @@ def person_transaktion_erstellen(token_hex: str) -> bool:
         elif response is not None and response.status_code == 403:
             fehler_nachricht = response.json().get('error', 'Benutzer gesperrt.')
             logger.warning("Benutzer ist gesperrt (403): %s", fehler_nachricht)
-            sound_ausgabe.sprich_text("error", fehler_nachricht, sprache="de")
+            sound_ausgabe.sprich_text("locked", fehler_nachricht, sprache="de")
         else:
             logger.error("Fehler bei der API-Anfrage: %s", e)
             sound_ausgabe.sprich_text("error", "API-Fehler, bitte informiere einen Administrator.", sprache="de")
@@ -210,7 +210,7 @@ def verarbeite_token(token_hex, last_token_time):
 
     if last_token_time is None or jetzt - last_token_time >= token_delay:
         # beep sound wenn Token gescannt wurde
-        sound_ausgabe.play_sound_effect("beep1")
+        sound_ausgabe.play_sound_effect("scan")
         transaktion_erfolgreich = person_transaktion_erstellen(token_hex)
         if transaktion_erfolgreich:
             return jetzt  # Aktualisiere den Zeitstempel

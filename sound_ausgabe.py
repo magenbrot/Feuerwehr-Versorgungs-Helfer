@@ -9,6 +9,21 @@ with redirect_stdout(StringIO()):
     import pygame
 from gtts import gTTS
 from gtts.tts import gTTSError
+from dotenv import load_dotenv
+
+# Environment configuration laden
+load_dotenv()
+
+# Configuration mapping for events to sound files
+EVENT_SOUND_MAP = {
+    "scan": os.getenv("SOUND_SCAN", "beep1"),
+    "success": os.getenv("SOUND_SUCCESS", "plopp1"),
+    "zero_balance": os.getenv("SOUND_ZERO_BALANCE", "badumtss"),
+    "blocked": os.getenv("SOUND_BLOCKED", "wah-wah"),
+    "locked": os.getenv("SOUND_LOCKED", "error"),
+    "info": os.getenv("SOUND_INFO", "tagesschau"),
+    "error": os.getenv("SOUND_ERROR", "error"),
+}
 
 logger = logging.getLogger(__name__)
 
@@ -30,17 +45,25 @@ def play_sound_effect(sound_datei_name: str | None) -> bool:
     Spielt einen Soundeffekt ab, falls angegeben und gefunden.
 
     Args:
-        sound_datei_name (str | None): Der Name der Sounddatei (z. B. "alarm")
-                                       oder None.
+        sound_datei_name (str | None): Der Name der Sounddatei (z. B. "alarm"),
+                                       ein Event-Name oder None.
 
     Returns:
-        bool: True, wenn kein Sound angefordert oder der Sound erfolgreich
+        bool: True, wenn kein Sound angefordert, deaktiviert oder der Sound erfolgreich
               abgespielt wurde. False, bei einem Fehler oder wenn die Datei
               nicht gefunden wurde.
     """
 
     if not sound_datei_name:
         return True
+
+    resolved_name = EVENT_SOUND_MAP.get(sound_datei_name, sound_datei_name)
+
+    if not resolved_name or str(resolved_name).lower() in ("none", "false", ""):
+        logging.debug("Sound-Ausgabe deaktiviert für: %s", sound_datei_name)
+        return True
+
+    sound_datei_name = resolved_name
 
     if not pygame.mixer.get_init():
         try:
@@ -49,6 +72,8 @@ def play_sound_effect(sound_datei_name: str | None) -> bool:
             logging.error("Pygame-Mixer konnte nicht initialisiert werden.")
             return False
 
+    success = False
+    full_sound_path = ""
     try:
         base_path = "static/sounds/"
         sound_file = f"{sound_datei_name}.mp3" if not sound_datei_name.endswith(".mp3") else sound_datei_name
@@ -56,21 +81,20 @@ def play_sound_effect(sound_datei_name: str | None) -> bool:
 
         if not os.path.exists(full_sound_path):
             logging.warning("Sound-Datei nicht gefunden: %s", full_sound_path)
-            return False
-
-        effekt = pygame.mixer.Sound(full_sound_path)
-        logging.info("Spiele Soundeffekt ab: %s", full_sound_path)
-        effekt.play()
-        time.sleep(effekt.get_length())  # Warten, bis der Sound zu Ende ist
-        return True
+        else:
+            effekt = pygame.mixer.Sound(full_sound_path)
+            logging.info("Spiele Soundeffekt ab: %s", full_sound_path)
+            effekt.play()
+            time.sleep(effekt.get_length())  # Warten, bis der Sound zu Ende ist
+            success = True
 
     except pygame.error as e:  # pylint: disable=no-member
         logging.error("Pygame-Fehler beim Abspielen des Sounds '%s': %s", full_sound_path, e)
-        return False  # Fehler explizit zurückgeben
 
     except Exception as e:  # pylint: disable=W0718
         logging.error("Unerwarteter Fehler in play_sound_effect: %s", e, exc_info=True)
-        return False  # Fehler explizit zurückgeben
+
+    return success
 
 
 def _cleanup_tts_resources(filename: str | None = None) -> None:

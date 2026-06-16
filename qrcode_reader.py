@@ -176,22 +176,22 @@ def its_a_usercode(usercode):
     logger.info("Benutzer: %s - Aktion: %s.", code, aktion)
 
     # beep sound wenn Token gescannt wurde
-    sound_ausgabe.play_sound_effect("beep1")
+    sound_ausgabe.play_sound_effect("scan")
 
     if (aktion) == "a":
         # lade den Benutzer aus der DB
         response = person_transaktion_erstellen(code, beschreibung)
         if response.json().get('action') == 'block':
-            sound_ausgabe.sprich_text("wah-wah", f"{response.json()['message']}", sprache="de")
+            sound_ausgabe.sprich_text("blocked", f"{response.json()['message']}", sprache="de")
             return
         if response.json().get('action') == 'locked':
-            sound_ausgabe.sprich_text("error", f"{response.json()['message']}", sprache="de")
+            sound_ausgabe.sprich_text("locked", f"{response.json()['message']}", sprache="de")
             return
         new_saldo = int(response.json().get('saldo'))
         if new_saldo == 0:
-            sound_ausgabe.sprich_text("badumtss", f"Hallo {response.json().get('vorname')}! Dein Kontostand beträgt momentan {new_saldo}€.", sprache="de")
+            sound_ausgabe.sprich_text("zero_balance", f"Hallo {response.json().get('vorname')}! Dein Kontostand beträgt momentan {new_saldo}€.", sprache="de")
             return
-        sound_ausgabe.sprich_text("plopp1", f"{response.json()['message']}", sprache="de")
+        sound_ausgabe.sprich_text("success", f"{response.json()['message']}", sprache="de")
         return
     if (aktion) == "k":
         # Personendaten und aktuelles Saldo holen
@@ -199,7 +199,7 @@ def its_a_usercode(usercode):
         if abfrage:
             nachname, vorname, saldo = abfrage
             logger.info("Der Saldo für %s %s ist %s€.", vorname, nachname, saldo)
-            sound_ausgabe.sprich_text("tagesschau", f"Hallo {vorname}! Dein Kontostand beträgt momentan {saldo}€.", sprache="de")
+            sound_ausgabe.sprich_text("info", f"Hallo {vorname}! Dein Kontostand beträgt momentan {saldo}€.", sprache="de")
             return
     else:
         logger.error("Mit dem QR-Code stimmt etwas nicht!")

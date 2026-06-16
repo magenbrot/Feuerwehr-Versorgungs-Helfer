@@ -102,6 +102,20 @@ Thu Jun  5 11:13:20 2025
 
 #### Soundausgabe konfigurieren
 
+Die Sounds für verschiedene System-Ereignisse können über die `.env` Datei frei konfiguriert werden. Die Töne müssen im Verzeichnis `static/sounds/` liegen (ohne Angabe der Dateiendung `.mp3`). Falls ein Ereignis keinen Ton abspielen soll, kann der Wert auf `none`, `false` oder leer gelassen werden.
+
+Folgende Events können in der `.env` konfiguriert werden:
+
+| Variable | Beschreibung | Standard-Sound |
+|---|---|---|
+| `SOUND_SCAN` | Wird abgespielt, sobald ein NFC-Token oder QR-Code gescannt wird. | `beep1` |
+| `SOUND_SUCCESS` | Erfolgreiche Buchung (Kontostand > 0). | `plopp1` |
+| `SOUND_ZERO_BALANCE` | Buchung erfolgreich, aber neuer Kontostand ist genau 0€. | `badumtss` |
+| `SOUND_BLOCKED` | Buchung fehlgeschlagen, da der Benutzer blockiert ist (`block` Aktion). | `wah-wah` |
+| `SOUND_LOCKED` | Benutzerkonto ist gesperrt (`locked` Aktion / HTTP 403). | `error` |
+| `SOUND_INFO` | Informations-Abfrage (z. B. Kontostandsabfrage per QR-Code). | `tagesschau` |
+| `SOUND_ERROR` | Fehlerhafte Aktionen, unbekannte Benutzer oder API-Fehler. | `error` |
+
 ##### via HDMI
 
 Die Soundausgabe via HDMI hat auf dem RaspberryPi 5 ohne weitere Änderungen direkt funktioniert. Die Funktion kann über den direkten Aufruf des Scripts `python3 sound_ausgabe.py` getestet werden (venv aktivieren nicht vergessen).
