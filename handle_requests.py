@@ -17,6 +17,7 @@ def delete_request(url, headers=None):
     Returns:
         requests.Response: Das Response-Objekt.
     """
+    response = None
     try:
         response = requests.delete(url, headers=headers, timeout=10)
         response.raise_for_status()
@@ -37,6 +38,7 @@ def get_request(url, headers=None, params=None):
     Returns:
         requests.Response: Das Response-Objekt.
     """
+    response = None
     try:
         response = requests.get(url, headers=headers, params=params, timeout=10)
         response.raise_for_status()  # Wirft eine Exception für fehlerhafte Statuscodes
@@ -57,6 +59,7 @@ def post_request(url, headers=None, json_data=None):
     Returns:
         requests.Response: Das Response-Objekt.
     """
+    response = None
     try:
         response = requests.post(url, headers=headers,
                                  json=json_data, timeout=10)
@@ -79,6 +82,7 @@ def put_request(url, headers=None, json_data=None):
     Returns:
         requests.Response: Das Response-Objekt.
     """
+    response = None
     try:
         response = requests.put(url, headers=headers,
                                 json=json_data, timeout=10)

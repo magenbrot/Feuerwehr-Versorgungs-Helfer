@@ -181,30 +181,30 @@ def its_a_usercode(usercode):
     if (aktion) == "a":
         # lade den Benutzer aus der DB
         response = person_transaktion_erstellen(code, beschreibung)
-        if response.json().get('action') == 'block':
+        if response is None:
+            sound_ausgabe.sprich_text("error", "API-Fehler, bitte informiere einen Administrator.", sprache="de")
+        elif response.json().get('action') == 'block':
             sound_ausgabe.sprich_text("blocked", f"{response.json()['message']}", sprache="de")
-            return
-        if response.json().get('action') == 'locked':
+        elif response.json().get('action') == 'locked':
             sound_ausgabe.sprich_text("locked", f"{response.json()['message']}", sprache="de")
-            return
-        new_saldo = int(response.json().get('saldo'))
-        if new_saldo == 0:
-            sound_ausgabe.sprich_text("zero_balance", f"Grüße {response.json().get('vorname')}! Dein Kontostand beträgt momentan {new_saldo}€.", sprache="de")
-            return
-        sound_ausgabe.sprich_text("success", f"{response.json()['message']}", sprache="de")
-        return
-    if (aktion) == "k":
+        else:
+            new_saldo = int(response.json().get('saldo'))
+            if new_saldo == 0:
+                sound_ausgabe.sprich_text("zero_balance", f"Grüße {response.json().get('vorname')}! Dein Kontostand beträgt momentan {new_saldo}€.", sprache="de")
+            else:
+                sound_ausgabe.sprich_text("success", f"{response.json()['message']}", sprache="de")
+    elif (aktion) == "k":
         # Personendaten und aktuelles Saldo holen
         abfrage = person_daten_lesen(code)
         if abfrage:
             nachname, vorname, saldo = abfrage
             logger.info("Der Saldo für %s %s ist %s€.", vorname, nachname, saldo)
             sound_ausgabe.sprich_text("info", f"Grüße {vorname}! Dein Kontostand beträgt momentan {saldo}€.", sprache="de")
-            return
+        else:
+            sound_ausgabe.sprich_text("error", "Benutzer nicht gefunden oder API-Fehler.", sprache="de")
     else:
         logger.error("Mit dem QR-Code stimmt etwas nicht!")
         sound_ausgabe.sprich_text("error", "Mit deinem QR-Code stimmt etwas nicht. Bitte wende dich an deinen Administrator.", sprache="de")
-        return
 
 
 def healthcheck():
@@ -282,6 +282,8 @@ def person_daten_lesen(code):
     }
 
     get_response = hr.get_request(get_url, get_headers)
+    if get_response is None:
+        return None
 
     person_daten = get_response.json()
     if 'error' in person_daten:

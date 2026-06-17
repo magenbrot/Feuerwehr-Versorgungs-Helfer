@@ -109,6 +109,9 @@ def person_transaktion_erstellen(token_hex: str) -> bool:
         # 2. API-Anfrage senden und auf HTTP-Fehler prüfen
         logger.info("Sende NFC-Token %s an die API...", token_hex_sauber)
         response = hr.put_request(put_url, put_headers, put_daten)
+        if response is None:
+            sound_ausgabe.sprich_text("error", "API-Fehler, bitte informiere einen Administrator.", sprache="de")
+            return False
         response.raise_for_status()  # Löst bei 4xx/5xx eine Exception aus
 
         # 3. Erfolgreiche Antwort (2xx) verarbeiten
