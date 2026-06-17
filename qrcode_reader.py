@@ -193,6 +193,7 @@ def its_a_usercode(usercode):
                 sound_ausgabe.sprich_text("zero_balance", f"Grüße {response.json().get('vorname')}! Dein Kontostand beträgt momentan {new_saldo}€.", sprache="de")
             else:
                 sound_ausgabe.sprich_text("success", f"{response.json()['message']}", sprache="de")
+            sound_ausgabe.play_sound_effect("transaction_end")
     elif (aktion) == "k":
         # Personendaten und aktuelles Saldo holen
         abfrage = person_daten_lesen(code)

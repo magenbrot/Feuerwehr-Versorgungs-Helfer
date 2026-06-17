@@ -30,6 +30,7 @@ EVENT_SOUND_MAP = {
     "locked": os.getenv("SOUND_LOCKED", "error"),
     "info": os.getenv("SOUND_INFO", "tagesschau"),
     "error": os.getenv("SOUND_ERROR", "error"),
+    "transaction_end": os.getenv("SOUND_TRANSACTION_END", "none"),
 }
 
 logger = logging.getLogger(__name__)

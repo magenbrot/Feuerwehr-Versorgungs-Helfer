@@ -125,6 +125,7 @@ def person_transaktion_erstellen(token_hex: str) -> bool:
                 sound_ausgabe.sprich_text("zero_balance", nachricht, sprache="de")
             else:
                 sound_ausgabe.sprich_text("success", nachricht, sprache="de")
+            sound_ausgabe.play_sound_effect("transaction_end")
         erfolgreich = True
 
     except hr.requests.exceptions.RequestException as e:

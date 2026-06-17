@@ -115,6 +115,7 @@ Folgende Events können in der `.env` konfiguriert werden:
 | `SOUND_LOCKED` | Benutzerkonto ist gesperrt (`locked` Aktion / HTTP 403). | `error` |
 | `SOUND_INFO` | Informations-Abfrage (z. B. Kontostandsabfrage per QR-Code). | `tagesschau` |
 | `SOUND_ERROR` | Fehlerhafte Aktionen, unbekannte Benutzer oder API-Fehler. | `error` |
+| `SOUND_TRANSACTION_END` | Optionaler Sound, der am Ende einer erfolgreichen Buchung abgespielt wird. | `none` |
 
 ##### via HDMI
 
