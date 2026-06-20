@@ -8,7 +8,7 @@ Dieses Repository enthält Client-Anwendungen (Terminals) für das digitale Stri
 
 Die Anwendungen und Skripte dienen unterschiedlichen Zwecken:
 
-* **QR-Code Leser (`qrcode_leser.py`)**: Verwendet eine angeschlossene Webcam, um spezielle QR-Codes zu erkennen und Aktionen auszulösen.
+* **QR-Code Leser (`qrcode_reader.py`)**: Verwendet eine angeschlossene Webcam, um spezielle QR-Codes zu erkennen und Aktionen auszulösen.
 * **NFC-Leser (`nfc_reader.py`)**: Verwendet einen ACR122U/ACR1252U NFC-Kartenleser, um NFC-Tokens (Karten, Anhänger, Smartphones) zu erkennen und Transaktionen zu starten. Der Code ist eventuell auch mit anderen USB-NFC-Readern kompatibel.
 
 ## Allgemeine Voraussetzungen 🛠️
@@ -28,8 +28,11 @@ Die Anwendungen und Skripte dienen unterschiedlichen Zwecken:
   * `API_URL`: Die vollständige URL zum API-Endpunkt des Backends (z.B. `http://localhost:5000`).
   * `API_KEY`: Ein gültiger API-Schlüssel für die Authentifizierung am Backend (wird über die Web-GUI angelegt)
   * `TOKEN_DELAY`: Zeit in Sekunden, die der aufgelegte NFC-Token für weitere Transaktionen blockiert wird.
-  * `MY_NAME` (optional, für `qrcode_leser.py` & `nfc_reader.py`): Ein Name für das Terminal (z.B. "Kasse Theke"), der als Beschreibung für Transaktionen verwendet wird.
-  * `DISABLE_BUZZER`: Versucht den eingebauten Hardware-Signalton des NFC-Readers zu deaktivieren. True = deaktivieren, False = aktivieren.
+  * `MY_NAME` (optional, für `qrcode_reader.py` & `nfc_reader.py`): Ein Name für das Terminal (z.B. "Kasse Theke"), der als Beschreibung für Transaktionen verwendet wird.
+  * `DISABLE_BUZZER`: Versucht den eingebauten Hardware-Signalton des NFC-Readers zu deaktivieren. `True` = deaktivieren, `False` = aktivieren.
+  * `CAMERA_INDEX` (optional): Der Index der zu verwendenden Kamera (Standard: `-1` für die erste verfügbare Kamera).
+  * `LOG_LEVEL` (optional): Steuert die Detailtiefe der Log-Ausgaben (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`, Standard: `INFO`).
+  * `TTS_VOICE` (optional): Die Stimme für die neuronale Sprachausgabe (z. B. `de-DE-KillianNeural` oder `de-DE-KatjaNeural`).
 
 ## Installation 🔧
 
@@ -180,7 +183,7 @@ Der Start der Applikationen soll über systemd erfolgen. Dazu sollten sie bereit
 
 ## Die Applikationen
 
-### 1. QR-Code Leser (`qrcode_leser.py`) 📷
+### 1. QR-Code Leser (`qrcode_reader.py`) 📷
 
 Dieses Skript startet eine Webcam, erkennt QR-Codes und führt basierend auf dem Inhalt Aktionen über die API aus.
 
@@ -213,7 +216,7 @@ Dieses Skript startet eine Webcam, erkennt QR-Codes und führt basierend auf dem
 #### Starten des QR-Code Lesers
 
 ```bash
-python qrcode_leser.py
+python3 qrcode_reader.py
 ```
 
 ### 2. NFC-Leser (`nfc_reader.py`) 💳📲
@@ -229,25 +232,26 @@ Dieses Skript verwendet einen ACR122U NFC-Kartenleser, um NFC-Chips auszulesen u
 
 #### Funktionalität des NFC-Lesers
 
-* **Kontinuierliche Token-Suche**: Sucht permanent nach NFC-Tokens auf dem Lesegerät.
+* **Eventbasierte Überwachung**: Der Leser läuft nicht in einer aktiven Abfrageschleife (Polling busy-loop), sondern nutzt den `CardMonitor` / `CardObserver` von `pyscard`, um ressourcenschonend (0% CPU-Last im Leerlauf) auf das Auflegen und Entfernen von NFC-Tokens zu reagieren.
 * **Token-Identifikation**:
-  * Versucht primär, die ATS (Answer to Select) des Tokens zu lesen.
-  * Falls keine ATS verfügbar ist, wird die UID (Unique Identifier) des Tokens gelesen.
+  * Versucht primär die statische/eindeutige UID (Unique Identifier) des Tokens zu lesen.
+  * Falls die UID mit `08` beginnt (was z. B. bei Smartphones auf eine zufällig generierte, dynamische UID hinweist), wird die stabilere ATS (Answer to Select) des Tokens ausgelesen.
+  * Falls die UID nicht ausgelesen werden kann, dient die ATS als Fallback.
 * **API-Transaktion**:
-  * Die gelesenen Token-Daten (ATS oder UID im Hex-Format) werden in Base64 umgewandelt und an den `/nfc-transaktion` Endpunkt der API gesendet.
+  * Die gelesenen Token-Daten (UID oder ATS im Hex-Format) werden in Base64 umgewandelt und an den `/nfc-transaktion` Endpunkt der API gesendet.
   * Die API bucht dann einen Standardbetrag vom Konto des zum Token gehörenden Benutzers ab.
-  * Die Erfolgs- oder Fehlermeldung der API wird in der Konsole ausgegeben.
-* **Verzögerung (`TOKEN_DELAY`)**: Verhindert mehrfache Verarbeitung desselben Tokens.
-* **Buzzer-Steuerung**: Deaktiviert ggf. den Buzzer des Lesers.
+  * Die Erfolgs- oder Fehlermeldung der API wird in der Konsole ausgegeben und über Sprachausgabe angesagt.
+* **Verzögerung (`TOKEN_DELAY`)**: Verhindert mehrfache Verarbeitung desselben Tokens, solange er aufgelegt bleibt.
+* **Buzzer-Steuerung**: Deaktiviert ggf. den Buzzer des Lesers beim Programmstart.
 * **API-Interaktion**: Nutzt das `handle_requests.py` Modul für API-Aufrufe an `/health-protected` und `/nfc-transaktion`.
 
 #### Starten des NFC-Lesers
 
 ```bash
-python nfc_reader.py
+python3 nfc_reader.py
 ```
 
 ### Wichtige Hinweise ⚠️
 
 * Stellen Sie sicher, dass die in der `.env`-Datei konfigurierten `API_URL` und `API_KEY` korrekt sind und mit Ihrem Backend übereinstimmen.
-* Die Client-Terminals (`qrcode_leser.py`, `nfc_reader.py`) führen beim Start einen Healthcheck gegen die API aus, um die Verbindung zu überprüfen.
+* Die Client-Terminals (`qrcode_reader.py`, `nfc_reader.py`) führen beim Start einen Healthcheck gegen die API aus, um die Verbindung zu überprüfen.
