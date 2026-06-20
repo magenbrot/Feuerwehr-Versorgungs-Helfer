@@ -9,7 +9,7 @@ with redirect_stdout(StringIO()):
     import pygame
 import asyncio
 import edge_tts
-from dotenv import load_dotenv
+import config
 
 DEFAULT_VOICES = {
     "de": "de-DE-KillianNeural",
@@ -18,20 +18,8 @@ DEFAULT_VOICES = {
     "es": "es-ES-AlvaroNeural",
 }
 
-# Environment configuration laden
-load_dotenv()
-
 # Configuration mapping for events to sound files
-EVENT_SOUND_MAP = {
-    "scan": os.getenv("SOUND_SCAN", "beep1"),
-    "success": os.getenv("SOUND_SUCCESS", "plopp1"),
-    "zero_balance": os.getenv("SOUND_ZERO_BALANCE", "badumtss"),
-    "blocked": os.getenv("SOUND_BLOCKED", "wah-wah"),
-    "locked": os.getenv("SOUND_LOCKED", "error"),
-    "info": os.getenv("SOUND_INFO", "tagesschau"),
-    "error": os.getenv("SOUND_ERROR", "error"),
-    "transaction_end": os.getenv("SOUND_TRANSACTION_END", "none"),
-}
+EVENT_SOUND_MAP = config.SOUND_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +144,7 @@ def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slo
 
     try:
         # Bestimme die neuronale Stimme
-        voice = os.getenv("TTS_VOICE")
+        voice = config.TTS_VOICE
         if not voice:
             voice = DEFAULT_VOICES.get(sprache, "de-DE-KillianNeural")
 

@@ -23,7 +23,10 @@ def delete_request(url, headers=None):
         response.raise_for_status()
         return response
     except requests.exceptions.RequestException as e:
-        logger.error("Fehler beim DELETE-Request an %s: %s", url, e)
+        if response is not None and response.status_code in (403, 404):
+            logger.info("Meldung beim DELETE-Request an %s (Status: %s)", url, response.status_code)
+        else:
+            logger.error("Fehler beim DELETE-Request an %s: %s", url, e)
         return response
 
 
@@ -44,7 +47,10 @@ def get_request(url, headers=None, params=None):
         response.raise_for_status()  # Wirft eine Exception für fehlerhafte Statuscodes
         return response
     except requests.exceptions.RequestException as e:
-        logger.error("Fehler beim GET-Request an %s: %s", url, e)
+        if response is not None and response.status_code in (403, 404):
+            logger.info("Meldung beim GET-Request an %s (Status: %s)", url, response.status_code)
+        else:
+            logger.error("Fehler beim GET-Request an %s: %s", url, e)
         return response
 
 
@@ -66,7 +72,10 @@ def post_request(url, headers=None, json_data=None):
         response.raise_for_status()
         return response
     except requests.exceptions.RequestException as e:
-        logger.error("Fehler beim POST-Request an %s: %s", url, e)
+        if response is not None and response.status_code in (403, 404):
+            logger.info("Meldung beim POST-Request an %s (Status: %s)", url, response.status_code)
+        else:
+            logger.error("Fehler beim POST-Request an %s: %s", url, e)
         return response
 
 
@@ -89,5 +98,8 @@ def put_request(url, headers=None, json_data=None):
         response.raise_for_status()
         return response
     except requests.exceptions.RequestException as e:
-        logger.error("Fehler beim PUT-Request an %s: %s", url, e)
+        if response is not None and response.status_code in (403, 404):
+            logger.info("Meldung beim PUT-Request an %s (Status: %s)", url, response.status_code)
+        else:
+            logger.error("Fehler beim PUT-Request an %s: %s", url, e)
         return response

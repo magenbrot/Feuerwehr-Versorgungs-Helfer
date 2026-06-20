@@ -6,27 +6,13 @@ import time
 import json
 import os
 from contextlib import redirect_stderr
-from dotenv import load_dotenv
 import cv2
 # import numpy as np # nur für optionale Visualisierung
 from pyzbar.pyzbar import decode
-import handle_requests as hr
 import sound_ausgabe
+import config
+import api_client
 
-load_dotenv()
-api_url = os.environ.get("API_URL")
-api_key = os.environ.get("API_KEY")
-my_name = os.environ.get("MY_NAME")
-camera_index = int(os.environ.get("CAMERA_INDEX"))
-log_level = os.getenv('LOG_LEVEL', 'INFO')
-
-logging.basicConfig(
-    level=log_level,
-    format='%(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stderr)
-    ]
-)
 logger = logging.getLogger(__name__)
 
 
@@ -90,57 +76,42 @@ def qr_code_lesen(cap_video):
     wartezeit_start = 0
     wartezeit_dauer = 5  # in Sekunden
 
-    while True:
-        ret, frame = cap_video.read()
-        if not ret:
-            logger.error("Frame konnte nicht gelesen werden!")
-            break
+    letzte_dekodierung_zeit = 0
+    dekodierungs_intervall = 0.15  # Dekodieren alle 150 ms (ca. 6-7 Mal pro Sekunde)
 
-        # Prüfen, ob die Wartezeit (Cooldown) noch aktiv ist
-        if wartezeit_aktiv:
-            if time.time() - wartezeit_start >= wartezeit_dauer:
-                # Wartezeit abgelaufen
-                wartezeit_aktiv = False
-                letzter_inhalt = None  # Zurücksetzen, um neue Erkennung zu ermöglichen
+    with open(os.devnull, 'w', encoding='utf-8') as devnull_file:
+        while True:
+            # 1. Immer einen Frame lesen, um den OpenCV-Kamerabuffer frisch zu halten
+            ret, frame = cap_video.read()
+            if not ret:
+                logger.error("Frame konnte nicht gelesen werden!")
+                break
 
-        # QR-Code nur dekodieren, wenn keine Wartezeit aktiv ist
-        if not wartezeit_aktiv:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            with open(os.devnull, 'w', encoding='utf-8') as f:
-                with redirect_stderr(f):
+            # 2. Cooldown-Handling (Kamera auslesen, aber Dekodierung überspringen)
+            if wartezeit_aktiv:
+                if time.time() - wartezeit_start >= wartezeit_dauer:
+                    # Wartezeit abgelaufen
+                    wartezeit_aktiv = False
+                    letzter_inhalt = None  # Zurücksetzen, um neue Erkennung zu ermöglichen
+                continue
+
+            # 3. Drosselung der Dekodierung zur CPU-Schonung
+            jetzt = time.time()
+            if jetzt - letzte_dekodierung_zeit >= dekodierungs_intervall:
+                letzte_dekodierung_zeit = jetzt
+
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                with redirect_stderr(devnull_file):
                     decoded_objects = decode(gray)
 
-            for obj in decoded_objects:
-                qr_data = obj.data.decode('utf-8')
-                if qr_data != letzter_inhalt:
-                    werte_qr_code_aus(str(qr_data))
-                    letzter_inhalt = qr_data
-                    wartezeit_aktiv = True
-                    wartezeit_start = time.time()
-
-                    # Breche die 'for'-Schleife ab, sobald ein Code gefunden wurde,
-                    # um direkt in die Wartezeit zu gehen.
-                    break
-
-                # # Optionale Visualisierung
-                # points = obj.polygon
-                # if len(points) > 4:
-                #     hull = cv2.convexHull(np.array([point for point in points], dtype=np.float32))
-                #     hull = list(map(tuple, np.int0(hull)))
-                # else:
-                #     hull = points
-                # n = len(hull)
-                # for j in range(0, n):
-                #     cv2.line(frame, hull[j], hull[(j + 1) % n], (0, 255, 0), 2)
-
-        # Videobild als Fenster öffnen
-        # cv2.imshow('QR-Code Scanner', frame)
-
-        # Warte 1ms, dies drosselt die Schleife und verhindert 100% CPU-Last.
-        # Es ermöglicht auch das Abfangen der 'q'-Taste zum Beenden.
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            logger.info("Taste 'q' gedrückt, Schleife wird beendet.")
-            break
+                for obj in decoded_objects:
+                    qr_data = obj.data.decode('utf-8')
+                    if qr_data != letzter_inhalt:
+                        werte_qr_code_aus(str(qr_data))
+                        letzter_inhalt = qr_data
+                        wartezeit_aktiv = True
+                        wartezeit_start = time.time()
+                        break
 
 
 def werte_qr_code_aus(qr_code):
@@ -152,7 +123,7 @@ def werte_qr_code_aus(qr_code):
     """
     # logger.info("Code gelesen: %s", qr_code)
     if (qr_code) == "39b3bca191be67164317227fec3bed":
-        daten_alle = daten_lesen_alle()
+        daten_alle = api_client.daten_lesen_alle()
         json_daten_ausgeben(daten_alle)
     else:
         if (len(qr_code)) == 11:
@@ -171,7 +142,7 @@ def its_a_usercode(usercode):
 
     code = usercode[:10]  # die ersten 10 Stellen des usercodes sind dem Benutzer zugeordnet
     aktion = usercode[-1]  # letztes Zeichen im usercode bestimmt die auszuführende Aktion
-    beschreibung = my_name
+    beschreibung = config.MY_NAME
 
     logger.info("Benutzer: %s - Aktion: %s.", code, aktion)
 
@@ -180,7 +151,7 @@ def its_a_usercode(usercode):
 
     if (aktion) == "a":
         # lade den Benutzer aus der DB
-        response = person_transaktion_erstellen(code, beschreibung)
+        response = api_client.person_transaktion_erstellen(code, beschreibung)
         if response is None:
             sound_ausgabe.sprich_text("error", "API-Fehler, bitte informiere einen Administrator.", sprache="de")
         elif response.json().get('action') == 'block':
@@ -196,7 +167,7 @@ def its_a_usercode(usercode):
             sound_ausgabe.play_sound_effect("transaction_end")
     elif (aktion) == "k":
         # Personendaten und aktuelles Saldo holen
-        abfrage = person_daten_lesen(code)
+        abfrage = api_client.person_daten_lesen(code)
         if abfrage:
             nachname, vorname, saldo = abfrage
             logger.info("Der Saldo für %s %s ist %s€.", vorname, nachname, saldo)
@@ -208,118 +179,6 @@ def its_a_usercode(usercode):
         sound_ausgabe.sprich_text("error", "Mit deinem QR-Code stimmt etwas nicht. Bitte wende dich an deinen Administrator.", sprache="de")
 
 
-def healthcheck():
-    """
-    Healthcheck gegen API ausführen.
-
-    Returns:
-        dict or None: Die JSON-Antwort der Healthcheck-Endpunktes oder None bei einem Fehler.
-    """
-
-    get_url = f"{api_url}/health-protected"
-    get_headers = {
-        'X-API-Key': api_key
-    }
-
-    get_response = hr.get_request(get_url, get_headers)
-    if get_response:
-        return get_response.json()
-    return None
-
-
-def get_api_version():
-    """
-    API nach aktueller Version fragen.
-
-    Returns:
-        dict or None: Die JSON-Antwort des Version-Endpunktes oder None bei einem Fehler.
-    """
-
-    get_url = f"{api_url}/version"
-    get_headers = {
-        'X-API-Key': api_key
-    }
-
-    get_response = hr.get_request(get_url, get_headers)
-    if get_response:
-        return get_response.json().get('version')
-    return None
-
-
-def daten_lesen_alle():
-    """
-    Daten aller Benutzer anzeigen.
-
-    Returns:
-        dict or None: Die JSON-Antwort der API oder None bei einem Fehler.
-    """
-
-    get_url = f"{api_url}/saldo-alle"
-    get_headers = {
-        'X-API-Key': api_key
-    }
-
-    get_response = hr.get_request(get_url, get_headers)
-    if get_response:
-        return get_response.json()
-    return None
-
-
-def person_daten_lesen(code):
-    """
-    Daten einer Person anzeigen, gibt den aktuellen Saldo zurück.
-
-    Args:
-        code (str): Der Code der Person, deren Daten gelesen werden sollen.
-
-    Returns:
-        tuple or None: Ein Tupel mit (nachname, vorname, saldo) oder None bei einem Fehler.
-    """
-
-    get_url = f"{api_url}/person/{code}"
-
-    get_headers = {
-        'X-API-Key': api_key
-    }
-
-    get_response = hr.get_request(get_url, get_headers)
-    if get_response is None:
-        return None
-
-    person_daten = get_response.json()
-    if 'error' in person_daten:
-        logger.error("Fehler beim Abrufen der Personendaten: %s.", person_daten['error'])
-        return None
-    if person_daten:
-        return (person_daten['nachname'], person_daten['vorname'], person_daten['saldo'])
-    return None
-
-
-def person_transaktion_erstellen(code, beschreibung):
-    """
-    Transaktion für eine Person ausführen.
-
-    Args:
-        code (str): Der Code der Person, für die die Transaktion erstellt wird.
-        beschreibung (str): Die Beschreibung der Buchung.
-
-    Returns:
-        requests.Response or None: Das Response-Objekt oder None bei einem Fehler.
-    """
-
-    put_url = f"{api_url}/person/{code}/transaktion"
-    put_headers = {
-        'X-API-Key': api_key
-    }
-
-    put_daten = {
-        'beschreibung': beschreibung,
-    }
-
-    put_response = hr.put_request(put_url, put_headers, put_daten)
-    if put_response:
-        return put_response
-    return None
 
 
 def exit_gracefully(cap_video=None):
@@ -338,22 +197,17 @@ def exit_gracefully(cap_video=None):
 
 
 if __name__ == "__main__":
-    if not api_url:
-        logger.critical("API_URL ist nicht in den Umgebungsvariablen definiert")
-        sys.exit(1)
-    if not api_key:
-        logger.critical("API_KEY ist nicht in den Umgebungsvariablen definiert")
-        sys.exit(1)
+    config.validate_config()
 
     try:
-        health_status = healthcheck()
+        health_status = api_client.healthcheck()
         if health_status is None:
             logger.critical("Healthcheck fehlgeschlagen. Beende Skript")
             sys.exit(1)
 
-        version = get_api_version()
+        version = api_client.get_api_version()
 
-        cap = cv2.VideoCapture(camera_index)
+        cap = cv2.VideoCapture(config.CAMERA_INDEX)
         if not cap.isOpened():
             raise IOError("Kamera konnte nicht geöffnet werden.")
         logger.info("Bereitschaft (Version %s).", version)
