@@ -25,7 +25,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "1"
 logger = logging.getLogger(__name__)
 
 
-class NFCCardObserver(CardObserver):
+class NFCCardObserver(CardObserver):  # pylint: disable=too-few-public-methods
     """
     Observer-Klasse zur Überwachung von Karten-Ereignissen auf dem NFC-Reader.
     Reagiert auf das Auflegen und Entfernen von Token.
@@ -35,54 +35,65 @@ class NFCCardObserver(CardObserver):
         self.target_reader = target_reader
         self.last_token_time = None
 
-    def update(self, observable, actions):
-        (addedcards, removedcards) = actions
+    def update(self, observable, handlers):
+        (addedcards, removedcards) = handlers
 
         # 1. Wenn eine Karte entfernt wird
         for card in removedcards:
-            if card.reader == self.target_reader.name:
-                logger.info("Token entfernt.")
-                self.last_token_time = None
+            self._handle_removed_card(card)
 
         # 2. Wenn eine Karte aufgelegt wird
         for card in addedcards:
-            if card.reader == self.target_reader.name:
-                connection = None
+            self._handle_added_card(card)
+
+    def _handle_removed_card(self, card):
+        if card.reader == self.target_reader.name:
+            logger.info("Token entfernt.")
+            self.last_token_time = None
+
+    def _handle_added_card(self, card):
+        if card.reader != self.target_reader.name:
+            return
+
+        connection = None
+        try:
+            connection = card.createConnection()
+            # Bevorzuge T=1 Protokoll für schnellere Verbindung
+            connection.connect(CardConnection.T1_protocol)
+
+            token_hex = self._determine_token_hex(connection)
+
+            if token_hex:
+                self.last_token_time = verarbeite_token(token_hex, self.last_token_time)
+
+        except CardConnectionException as e:
+            logger.debug("Verbindungsfehler beim Auflegen des Tokens: %s", e)
+        except Exception as e:  # pylint: disable=W0718
+            logger.error("Fehler beim Verarbeiten des aufgelegten Tokens: %s", e)
+        finally:
+            if connection:
                 try:
-                    connection = card.createConnection()
-                    # Bevorzuge T=1 Protokoll für schnellere Verbindung
-                    connection.connect(CardConnection.T1_protocol)
+                    connection.disconnect()
+                except Exception:  # pylint: disable=W0718
+                    pass
 
-                    token_hex = None
+    def _determine_token_hex(self, connection):
+        """
+        Ermittelt den NFC-Token-Hexwert (bevorzugt UID, oder ATS bei Zufalls-UIDs/Fallback).
+        """
+        # 1. Zuerst UID prüfen (Schnelle Abfrage für reguläre Karten)
+        uid_hex = lese_nfc_token_uid(connection)
+        if not uid_hex:
+            # Fallback falls UID nicht lesbar war, aber ATS existiert
+            return lese_nfc_token_ats(connection)
 
-                    # 1. Zuerst UID prüfen (Schnelle Abfrage für reguläre Karten)
-                    uid_hex = lese_nfc_token_uid(connection)
-                    if uid_hex:
-                        uid_clean = uid_hex.replace(" ", "")
-                        # Wenn die UID mit "08" beginnt (Zufalls-UID z.B. bei Handys),
-                        # versuchen wir die stabilere ATS auszulesen
-                        if uid_clean.startswith("08"):
-                            ats_hex = lese_nfc_token_ats(connection)
-                            token_hex = ats_hex if ats_hex else uid_hex
-                        else:
-                            token_hex = uid_hex
-                    else:
-                        # Fallback falls UID nicht lesbar war, aber ATS existiert
-                        token_hex = lese_nfc_token_ats(connection)
-
-                    if token_hex:
-                        self.last_token_time = verarbeite_token(token_hex, self.last_token_time)
-
-                except CardConnectionException as e:
-                    logger.debug("Verbindungsfehler beim Auflegen des Tokens: %s", e)
-                except Exception as e:  # pylint: disable=W0718
-                    logger.error("Fehler beim Verarbeiten des aufgelegten Tokens: %s", e)
-                finally:
-                    if connection:
-                        try:
-                            connection.disconnect()
-                        except Exception:  # pylint: disable=W0718
-                            pass
+        uid_clean = uid_hex.replace(" ", "")
+        # Wenn die UID mit "08" beginnt (Zufalls-UID z.B. bei Handys),
+        # versuchen wir die stabilere ATS auszulesen
+        if uid_clean.startswith("08"):
+            ats_hex = lese_nfc_token_ats(connection)
+            return ats_hex if ats_hex else uid_hex
+        return uid_hex
 
 
 def person_transaktion_erstellen(token_hex: str) -> bool:
