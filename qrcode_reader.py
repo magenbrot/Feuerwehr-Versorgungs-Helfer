@@ -150,21 +150,25 @@ def its_a_usercode(usercode):
     sound_ausgabe.play_sound_effect("scan")
 
     if (aktion) == "a":
-        # lade den Benutzer aus der DB
-        response = api_client.person_transaktion_erstellen(code, beschreibung)
-        if response is None:
-            sound_ausgabe.sprich_text("error", "API-Fehler, bitte informiere einen Administrator.", sprache="de")
-        elif response.json().get('action') == 'block':
-            sound_ausgabe.sprich_text("blocked", f"{response.json()['message']}", sprache="de")
-        elif response.json().get('action') == 'locked':
-            sound_ausgabe.sprich_text("locked", f"{response.json()['message']}", sprache="de")
-        else:
-            new_saldo = int(response.json().get('saldo'))
-            if new_saldo == 0:
-                sound_ausgabe.sprich_text("zero_balance", f"Grüße {response.json().get('vorname')}! Dein Kontostand beträgt momentan {new_saldo}€.", sprache="de")
+        logger.info("Transaktion gestartet für Benutzer: %s", code)
+        try:
+            # lade den Benutzer aus der DB
+            response = api_client.person_transaktion_erstellen(code, beschreibung)
+            if response is None:
+                sound_ausgabe.sprich_text("error", "API-Fehler, bitte informiere einen Administrator.", sprache="de")
+            elif response.json().get('action') == 'block':
+                sound_ausgabe.sprich_text("blocked", f"{response.json()['message']}", sprache="de")
+            elif response.json().get('action') == 'locked':
+                sound_ausgabe.sprich_text("locked", f"{response.json()['message']}", sprache="de")
             else:
-                sound_ausgabe.sprich_text("success", f"{response.json()['message']}", sprache="de")
-            sound_ausgabe.play_sound_effect("transaction_end")
+                new_saldo = int(response.json().get('saldo'))
+                if new_saldo == 0:
+                    sound_ausgabe.sprich_text("zero_balance", f"Grüße {response.json().get('vorname')}! Dein Kontostand beträgt momentan {new_saldo}€.", sprache="de")
+                else:
+                    sound_ausgabe.sprich_text("success", f"{response.json()['message']}", sprache="de")
+                sound_ausgabe.play_sound_effect("transaction_end")
+        finally:
+            logger.info("Transaktion beendet für Benutzer: %s", code)
     elif (aktion) == "k":
         # Personendaten und aktuelles Saldo holen
         abfrage = api_client.person_daten_lesen(code)

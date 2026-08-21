@@ -114,10 +114,11 @@ def person_transaktion_erstellen(token_hex: str) -> bool:
     """
     erfolgreich = False
     response = None
+    token_hex_sauber = token_hex.replace(" ", "")
 
+    logger.info("Transaktion gestartet für NFC-Token: %s", token_hex_sauber)
     try:
         # 1. Token vorbereiten und validieren
-        token_hex_sauber = token_hex.replace(" ", "")
         token_bytes = binascii.unhexlify(token_hex_sauber)
         token_base64 = base64.b64encode(token_bytes).decode('utf-8')
 
@@ -164,6 +165,9 @@ def person_transaktion_erstellen(token_hex: str) -> bool:
     except Exception as e:  # pylint: disable=W0718
         logger.error("Allgemeiner Fehler: %s", e, exc_info=True)
         sound_ausgabe.sprich_text("error", "Ein unerwarteter Fehler ist aufgetreten.", sprache="de")
+
+    finally:
+        logger.info("Transaktion beendet für NFC-Token: %s", token_hex_sauber)
 
     return erfolgreich
 
