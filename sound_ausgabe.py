@@ -36,13 +36,16 @@ def _initialize_mixer():
             raise  # Re-raise the exception to be caught by the main function
 
 
-def play_sound_effect(sound_datei_name: str | None) -> bool:
+def play_sound_effect(sound_datei_name: str | None, cleanup: bool = True) -> bool:
     """
     Spielt einen Soundeffekt ab, falls angegeben und gefunden.
 
     Args:
         sound_datei_name (str | None): Der Name der Sounddatei (z. B. "alarm"),
                                        ein Event-Name oder None.
+        cleanup (bool, optional): Wenn True, wird der Pygame-Mixer nach dem Abspielen
+                                  wieder beendet (wichtig für ALSA-Ressourcenfreigabe).
+                                  Standard ist True.
 
     Returns:
         bool: True, wenn kein Sound angefordert, deaktiviert oder der Sound erfolgreich
@@ -90,6 +93,10 @@ def play_sound_effect(sound_datei_name: str | None) -> bool:
     except Exception as e:  # pylint: disable=W0718
         logging.error("Unerwarteter Fehler in play_sound_effect: %s", e, exc_info=True)
 
+    finally:
+        if cleanup:
+            _cleanup_tts_resources()
+
     return success
 
 
@@ -106,9 +113,10 @@ def _cleanup_tts_resources(filename: str | None = None) -> None:
     # pylint: disable=no-member
     if pygame.mixer.get_init():
         try:
-            # Stellt sicher, dass die Musik gestoppt ist, bevor der Mixer beendet wird
+            # Stellt sicher, dass Soundeffekte und Musik gestoppt sind, bevor der Mixer beendet wird
             if pygame.mixer.music.get_busy():
                 pygame.mixer.music.stop()
+            pygame.mixer.stop()
             pygame.mixer.quit()
             logging.debug("Pygame-Mixer wurde beendet.")
         except pygame.error as e:
@@ -140,7 +148,7 @@ def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slo
         slow (bool, optional): Wenn True, wird der Text langsamer gesprochen. Standard: False.
     """
 
-    temp_tts_filename = "output.mp3"
+    temp_tts_filename = f"output_{os.getpid()}.mp3"
 
     try:
         # Bestimme die neuronale Stimme
@@ -155,7 +163,9 @@ def sprich_text(sound_datei=None, text="Hier ist was kaputt!", sprache='de', slo
         asyncio.run(_generate_tts_edge(text, voice, rate, temp_tts_filename))
         logging.debug("TTS gespeichert in %s", temp_tts_filename)
 
-        play_sound_effect(sound_datei)
+        # Spiele optionalen Soundeffekt ab, ohne den Mixer vor dem TTS direkt zu schließen
+        if sound_datei:
+            play_sound_effect(sound_datei, cleanup=False)
 
         if not pygame.mixer.get_init():
             try:
