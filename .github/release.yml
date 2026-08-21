@@ -1,0 +1,22 @@
+changelog:
+  categories:
+    - title: "🚀 Neue Funktionen & Features"
+      labels:
+        - "enhancement"
+        - "feature"
+    - title: "🐛 Fehlerbehebungen & Bugfixes"
+      labels:
+        - "bug"
+        - "fix"
+    - title: "🧰 Wartung & Refactoring"
+      labels:
+        - "maintenance"
+        - "refactor"
+        - "documentation"
+        - "chore"
+    - title: "⬆️ Abhängigkeiten & Updates"
+      labels:
+        - "dependencies"
+  exclude:
+    labels:
+      - "ignore-for-release"

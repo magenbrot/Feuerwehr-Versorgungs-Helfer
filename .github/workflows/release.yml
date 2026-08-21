@@ -1,0 +1,32 @@
+name: Publish Client Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  package_and_upload:
+    name: Package and Attach Source ZIP
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Create ZIP archive
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name || github.ref_name }}"
+          ZIP_NAME="Feuerwehr-Versorgungs-Helfer-${TAG_NAME}.zip"
+          echo "Erstelle Archiv: ${ZIP_NAME}"
+          git archive --format=zip --prefix="Feuerwehr-Versorgungs-Helfer-${TAG_NAME}/" --output="${ZIP_NAME}" HEAD
+          echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
+
+      - name: Upload ZIP to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${TAG_NAME}" "${ZIP_NAME}" --clobber
